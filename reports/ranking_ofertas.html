@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ranking de ofertas</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+      --good: #166534;
+      --warn: #92400e;
+      --bad: #991b1b;
+      --chip: #eef2ff;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .header {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: var(--shadow);
+      margin-bottom: 24px;
+    }
+
+    .title {
+      margin: 0 0 8px;
+      font-size: 32px;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .summary {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    .summary-chip {
+      background: var(--chip);
+      border-radius: 999px;
+      padding: 10px 14px;
+      font-size: 14px;
+    }
+
+    .table-wrapper {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead th {
+      text-align: left;
+      font-size: 13px;
+      color: var(--muted);
+      background: #f9fafb;
+      padding: 14px;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+    }
+
+    tbody td {
+      padding: 14px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+      font-size: 14px;
+    }
+
+    tbody tr:hover {
+      background: #fafafa;
+    }
+
+    .rank {
+      font-weight: bold;
+      font-size: 18px;
+      min-width: 40px;
+    }
+
+    .book-cell {
+      display: flex;
+      gap: 14px;
+      min-width: 280px;
+    }
+
+    .cover {
+      width: 70px;
+      min-width: 70px;
+      height: 100px;
+      border-radius: 10px;
+      object-fit: cover;
+      border: 1px solid var(--border);
+      background: #f3f4f6;
+    }
+
+    .book-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .book-title {
+      font-weight: bold;
+      font-size: 15px;
+      line-height: 1.3;
+    }
+
+    .book-author {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .book-link a {
+      color: #2563eb;
+      text-decoration: none;
+      font-size: 13px;
+    }
+
+    .score {
+      font-weight: bold;
+      font-size: 18px;
+    }
+
+    .money {
+      white-space: nowrap;
+    }
+
+    .badges {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: bold;
+      white-space: nowrap;
+    }
+
+    .badge.good {
+      background: #dcfce7;
+      color: var(--good);
+    }
+
+    .badge.warn {
+      background: #fef3c7;
+      color: var(--warn);
+    }
+
+    .badge.bad {
+      background: #fee2e2;
+      color: var(--bad);
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .positive {
+      color: var(--good);
+      font-weight: bold;
+    }
+
+    .negative {
+      color: var(--bad);
+      font-weight: bold;
+    }
+
+    .neutral {
+      color: var(--muted);
+    }
+
+    @media (max-width: 1100px) {
+      .table-wrapper {
+        overflow-x: auto;
+      }
+
+      table {
+        min-width: 1200px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <section class="header">
+      <h1 class="title">Ranking de ofertas</h1>
+      <p class="subtitle">Generado el 15/3/2026, 10:01:17 p.m.</p>
+
+      <div class="summary">
+        <div class="summary-chip">Libros evaluados: 16</div>
+        <div class="summary-chip">Mínimos históricos: 16</div>
+        <div class="summary-chip">Descuento alto: 12</div>
+        <div class="summary-chip">Sospechosos: 0</div>
+      </div>
+    </section>
+
+    <section class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Libro</th>
+            <th>Score</th>
+            <th>Precio actual</th>
+            <th>Precio lista</th>
+            <th>Precio anterior</th>
+            <th>Mín. histórico</th>
+            <th>Descuento</th>
+            <th>Cambio vs anterior</th>
+            <th>Indicadores</th>
+          </tr>
+        </thead>
+        <tbody>
+          
+              <tr>
+                <td class="rank">1</td>
+                <td>
+                  <div class="book-cell">
+                    <img class="cover" src="https://images.cdn3.buscalibre.com/fit-in/150x230/9f/5e/9f5e78d02d5c7efe7b4ccf818e8355c5.jpg" alt="Alas de Ónix: Edición Especial con Cantos Tintados" />
+                    <div class="book-meta">
+                      <div class="book-title">Alas de Ónix: Edición Especial con Cantos Tintados</div>
+                      <div class="book-author">Rebecca Yarros</div>
+                      <div class="book-link"><a href="https://www.buscalibre.com.mx/libro-alas-de-onix-edicion-especial-con-cantos-tintados/9786073925044/p/63958720" target="_blank" rel="noopener noreferrer">Abrir libro</a></div>
+                    </div>
+                  </div>
+                </td>
+                <td class="score">75.00</td>
+                <td class="money">$489.48</td>
+                <td class="money">$978.96</td>
+                <td class="money">$489.48</td>
+                <td class="money">$489.48</td>
+                <td>50.00%</td>
+                <td class="neutral">$0.00</td>
+                <td>
+                  <div class="badges">
+                    <span class="badge good">🏆 Mínimo histórico</span><span class="badge warn">🔥 Descuento alto</span>
+                  </div>
+                </td>
+              </tr>
+            
+              <tr>
+                <td class="rank">2</td>
+                <td>
+                  <div class="book-cell">
+                    <img class="cover" src="https://images.cdn1.buscalibre.com/fit-in/150x230/64/78/647803b5a967d97acbee3aa9cef5d8d1.jpg" alt="Jujutsu Kaisen 11" />
+                    <div class="book-meta">
+                      <div class="book-title">Jujutsu Kaisen 11</div>
+                      <div class="book-author">Gege Akutami</div>
+                      <div class="book-link"><a href="https://www.buscalibre.com.mx/libro-jujutsu-kaisen-11/9788467972290/p/63497835" target="_blank" rel="noopener noreferrer">Abrir libro</a></div>
+                    </div>
+                  </div>
+                </td>
+                <td class="score">75.00</td>
+                <td class="money">$328.26</td>
+                <td class="money">$656.53</td>
+                <td class="money">$328.26</td>
+                <td class="money">$328.26</td>
+                <td>50.00%</td>
+                <td class="neutral">$0.00</td>
+                <td>
+                  <div class="badges">
+                    <span class="badge good">🏆 Mínimo histórico</span><span class="badge warn">🔥 Descuento alto</span>
+                  </div>
+                </td>
+              </tr>
+            
+              <tr>
+                <td class="rank">3</td>
+                <td>
+                  <div class="book-cell">
+                    <img class="cover" src="https://images.cdn3.buscalibre.com/fit-in/150x230/72/0c/720cc70d44d675d5a8e3906dd66ae3ae.jpg" alt="Jujutsu Kaisen 12" />
+                    <div class="book-meta">
+                      <div class="book-title">Jujutsu Kaisen 12</div>
+                      <div class="book-author">Gege Akutami</div>
+                      <div class="book-link"><a href="https://www.buscalibre.com.mx/libro-jujutsu-kaisen-12/9786075686097/p/54316219" target="_blank" rel="noopener noreferrer">Abrir libro</a></div>
+                    </div>
+                  </div>
+                </td>
+                <td class="score">75.00</td>
+                <td class="money">$444.82</td>
+                <td class="money">$889.64</td>
+                <td class="money">$444.82</td>
+                <td class="money">$444.82</td>
+                <td>50.00%</td>
+                <td class="neutral">$0.00</td>
+                <td>
+                  <div class="badges">
+                    <span class="badge good">🏆 Mínimo histórico</span><span class="badge warn">🔥 Descuento alto</span>
+                  </div>
+                </td>
+              </tr>
+            
+              <tr>
+                <td class="rank">4</td>
+                <td>
+                  <div class="book-cell">
+                    <img class="cover" src="https://images.cdn1.buscalibre.com/fit-in/150x230/b3/69/b36979a972efa4d0bc887abde5701b5a.jpg" alt="Jujutsu Kaisen 4" />
+                    <div class="book-meta">
+                      <div class="book-title">Jujutsu Kaisen 4</div>
+                      <div class="book-author">Gege Akutami</div>
+                      <div class="book-link"><a href="https://www.buscalibre.com.mx/libro-jujutsu-kaisen-4/9788467961140/p/55725782" target="_blank" rel="noopener noreferrer">Abrir libro</a></div>
+                    </div>
+                  </div>
+                </td>
+                <td class="score">75.00</td>
+                <td class="money">$328.26</td>
+                <td class="money">$656.53</td>
+                <td class="money">$328.26</td>
+                <td class="money">$328.26</td>
+                <td>50.00%</td>
+                <td class="neutral">$0.00</td>
+                <td>
+                  <div class="badges">
+                    <span class="badge good">🏆 Mínimo histórico</span><span class="badge warn">🔥 Descuento alto</span>
+                  </div>
+                </td>
+              </tr>
+            
+              <tr>
+                <td class="rank">5</td>
+                <td>
+                  <div class="book-cell">
+                    <img class="cover" src="https://images.cdn3.buscalibre.com/fit-in/150x230/07/23/0723a9db34ebb0a3ee431bb8f32990f0.jpg" alt="La diosa de la ilusión (edición especial con cantos tintados). Las Islas Verran: Libro 1" />
+                    <div class="book-meta">
+                      <div class="book-title">La diosa de la ilusión (edición especial con cantos tintados). Las Islas Verran: Libro 1</div>
+                      <div class="book-author">Madeline Taylor</div>
+                      <div class="book-link"><a href="https://www.buscalibre.com.mx/libro-la-diosa-de-la-ilusion-edicion-especial-con-cantos-tintados-las-islas-verran-libro-1/9788419988935/p/64739883" target="_blank" rel="noopener noreferrer">Abrir libro</a></div>
+                    </div>
+                  </div>
+                </td>
+                <td class="score">75.00</td>
+                <td class="money">$579.99</td>
+                <td class="money">$1,159.97</td>
+                <td class="money">$579.99</td>
+                <td class="money">$579.99</td>
+                <td>50.00%</td>
+                <td class="neutral">$0.00</td>
+                <td>
+                  <div class="badges">
+                    <span class="badge good">🏆 Mínimo histórico</span><span class="badge warn">🔥 Descuento alto</span>
+                  </div>
+                </td>
+              </tr>
+            
+              <tr>
+                <td class="rank">6</td>
+                <td>
+                  <div class="book-cell">
+                    <img class="cover" src="https://images.cdn3.buscalibre.com/fit-in/150x230/ac/7a/ac7a7e8150823b3b36e61d5083175d2f.jpg" alt="Los cinco besos de la luna (edición especial limitada)" />
+                    <div class="book-meta">
+                      <div class="book-title">Los cinco besos de la luna (edición especial limitada)</div>
+                      <div class="book-author">Miriam Mosquera</div>
+                      <div class="book-link"><a href="https://www.buscalibre.com.mx/libro-los-cinco-besos-de-la-luna-edicion-especial-limitada/9791388108082/p/65850313" target="_blank" rel="noopener noreferrer">Abrir libro</a></div>
+                    </div>
+                  </div>
+                </td>
+                <td class="score">75.00</td>
+                <td class="money">$596.32</td>
+                <td class="money">$1,192.65</td>
+                <td class="money">$596.32</td>
+                <td class="money">$596.32</td>
+                <td>50.00%</td>
+                <td class="neutral">$0.00</td>
+                <td>
+                  <div class="badges">
+                    <span class="badge good">🏆 Mínimo histórico</span><span class="badge warn">🔥 Descuento alto</span>
+                  </div>
+                </td>
+              </tr>
+            
+              <tr>
+                <td class="rank">7</td>
+                <td>
+                  <div class="book-cell">
+                    <img class="cover" src="https://images.cdn2.buscalibre.com/fit-in/150x230/eb/0b/eb0b6adbcc05b610de5dc5d76f1374d4.jpg" alt="OSCURA ES LA LLAMA (EDICIÓN LIMITADA CON CANTOS TINTADOS)" />
+                    <div class="book-meta">
+                      <div class="book-title">OSCURA ES LA LLAMA (EDICIÓN LIMITADA CON CANTOS TINTADOS)</div>
+                      <div class="book-author">ALBA ZAMORA</div>
+                      <div class="book-link"><a href="https://www.buscalibre.com.mx/libro-oscura-es-la-llama-edicion-limitada-con-cantos-tintados/9788427252691/p/64711974" target="_blank" rel="noopener noreferrer">Abrir libro</a></div>
+                    </div>
+                  </div>
+                </td>
+                <td class="score">75.00</td>
+                <td class="money">$548.14</td>
+                <td class="money">$1,096.28</td>
+                <td class="money">$548.14</td>
+                <td class="money">$548.14</td>
+                <td>50.00%</td>
+                <td class="neutral">$0.00</td>
+                <td>
+                  <div class="badges">
+                    <span class="badge good">🏆 Mínimo histórico</span><span class="badge warn">🔥 Descuento alto</span>
+                  </div>
+                </td>
+              </tr>
+            
+              <tr>
+                <td class="rank">8</td>
+                <td>
+                  <div class="book-cell">
+                    <img class="cover" src="https://images.cdn1.buscalibre.com/fit-in/150x230/de/4d/de4d12bafb8cb204a6a58a98d576f1d3.jpg" alt="Sangre de dragón (Academia Bloodwing 1) Edición limitada con cantos tintados" />
+                    <div class="book-meta">
+                      <div class="book-title">Sangre de dragón (Academia Bloodwing 1) Edición limitada con cantos tintados</div>
+                      <div class="book-author">Briar Boleyn</div>
+                      <div class="book-link"><a href="https://www.buscalibre.com.mx/libro-sangre-de-dragon-academia-bloodwing-1-edicion-limitada-con-cantos-tintados/9788408316459/p/64740072" target="_blank" rel="noopener noreferrer">Abrir libro</a></div>
+                    </div>
+                  </div>
+                </td>
+                <td class="score">75.00</td>
+                <td class="money">$648.66</td>
+                <td class="money">$1,297.32</td>
+                <td class="money">$648.66</td>
+                <td class="money">$648.66</td>
+                <td>50.00%</td>
+                <td class="neutral">$0.00</td>
+                <td>
+                  <div class="badges">
+                    <span class="badge good">🏆 Mínimo histórico</span><span class="badge warn">🔥 Descuento alto</span>
+                  </div>
+                </td>
+              </tr>
+            
+              <tr>
+                <td class="rank">9</td>
+                <td>
+                  <div class="book-cell">
+                    <img class="cover" src="https://images.cdn3.buscalibre.com/fit-in/150x230/62/af/62af4b5994fcefaa0b6b9c1c9fd70ef0.jpg" alt="Starside (Starside 1)" />
+                    <div class="book-meta">
+                      <div class="book-title">Starside (Starside 1)</div>
+                      <div class="book-author">Alex Aster</div>
+                      <div class="book-link"><a href="https://www.buscalibre.com.mx/libro-starside-starside-1/9791387949044/p/65545287" target="_blank" rel="noopener noreferrer">Abrir libro</a></div>
+                    </div>
+                  </div>
+                </td>
+                <td class="score">75.00</td>
+                <td class="money">$579.71</td>
+                <td class="money">$1,159.42</td>
+                <td class="money">$579.71</td>
+                <td class="money">$579.71</td>
+                <td>50.00%</td>
+                <td class="neutral">$0.00</td>
+                <td>
+                  <div class="badges">
+                    <span class="badge good">🏆 Mínimo histórico</span><span class="badge warn">🔥 Descuento alto</span>
+                  </div>
+                </td>
+              </tr>
+            
+              <tr>
+                <td class="rank">10</td>
+                <td>
+                  <div class="book-cell">
+                    <img class="cover" src="https://images.cdn2.buscalibre.com/fit-in/150x230/77/31/77317ef1bfe2ad40e9f0fa0123c7eec1.jpg" alt="Jujutsu Kaisen 0 (en Inglés)" />
+                    <div class="book-meta">
+                      <div class="book-title">Jujutsu Kaisen 0 (en Inglés)</div>
+                      <div class="book-author">Gege Akutami</div>
+                      <div class="book-link"><a href="https://www.buscalibre.com.mx/libro-jujutsu-kaisen-0/9781974720149/p/53700037" target="_blank" rel="noopener noreferrer">Abrir libro</a></div>
+                    </div>
+                  </div>
+                </td>
+                <td class="score">74.50</td>
+                <td class="money">$361.38</td>
+                <td class="money">$657.06</td>
+                <td class="money">$361.38</td>
+                <td class="money">$361.38</td>
+                <td>45.00%</td>
+                <td class="neutral">$0.00</td>
+                <td>
+                  <div class="badges">
+                    <span class="badge good">🏆 Mínimo histórico</span><span class="badge warn">🔥 Descuento alto</span>
+                  </div>
+                </td>
+              </tr>
+            
+              <tr>
+                <td class="rank">11</td>
+                <td>
+                  <div class="book-cell">
+                    <img class="cover" src="https://images.cdn3.buscalibre.com/fit-in/150x230/89/be/89be8c5be3d08838026a577628a46858.jpg" alt="Estuche especial Los Habitantes del Aire (Edición especial limitada)" />
+                    <div class="book-meta">
+                      <div class="book-title">Estuche especial Los Habitantes del Aire (Edición especial limitada)</div>
+                      <div class="book-author">Holly Black</div>
+                      <div class="book-link"><a href="https://www.buscalibre.com.mx/libro-estuche-especial-los-habitantes-del-aire-edicion-especial-limitada/9791387711474/p/64555238" target="_blank" rel="noopener noreferrer">Abrir libro</a></div>
+                    </div>
+                  </div>
+                </td>
+                <td class="score">74.10</td>
+                <td class="money">$1,357.00</td>
+                <td class="money">$2,300.00</td>
+                <td class="money">$1,357.00</td>
+                <td class="money">$1,357.00</td>
+                <td>41.00%</td>
+                <td class="neutral">$0.00</td>
+                <td>
+                  <div class="badges">
+                    <span class="badge good">🏆 Mínimo histórico</span><span class="badge warn">🔥 Descuento alto</span>
+                  </div>
+                </td>
+              </tr>
+            
+              <tr>
+                <td class="rank">12</td>
+                <td>
+                  <div class="book-cell">
+                    <img class="cover" src="https://images.cdn3.buscalibre.com/fit-in/150x230/86/da/86dac6288aa0da1d2332f4dfe4bc0bb6.jpg" alt="Alchemised Edición coleccionista (cantos tintados)" />
+                    <div class="book-meta">
+                      <div class="book-title">Alchemised Edición coleccionista (cantos tintados)</div>
+                      <div class="book-author">SenLinYu</div>
+                      <div class="book-link"><a href="https://www.buscalibre.com.mx/libro-alchemised-edicion-coleccionista-cantos-tintados/9791387924386/p/64829068" target="_blank" rel="noopener noreferrer">Abrir libro</a></div>
+                    </div>
+                  </div>
+                </td>
+                <td class="score">74.00</td>
+                <td class="money">$726.44</td>
+                <td class="money">$1,210.73</td>
+                <td class="money">$726.44</td>
+                <td class="money">$726.44</td>
+                <td>40.00%</td>
+                <td class="neutral">$0.00</td>
+                <td>
+                  <div class="badges">
+                    <span class="badge good">🏆 Mínimo histórico</span><span class="badge warn">🔥 Descuento alto</span>
+                  </div>
+                </td>
+              </tr>
+            
+              <tr>
+                <td class="rank">13</td>
+                <td>
+                  <div class="book-cell">
+                    <img class="cover" src="https://images.cdn3.buscalibre.com/fit-in/150x230/c3/04/c3040c764d43cfafc9ed4f574382f392.jpg" alt="Jujutsu Kaisen #1" />
+                    <div class="book-meta">
+                      <div class="book-title">Jujutsu Kaisen #1</div>
+                      <div class="book-author">Gege Akutami</div>
+                      <div class="book-link"><a href="https://www.buscalibre.com.mx/libro-jujutsu-kaisen-1/9786076349694/p/52988378" target="_blank" rel="noopener noreferrer">Abrir libro</a></div>
+                    </div>
+                  </div>
+                </td>
+                <td class="score">56.10</td>
+                <td class="money">$150.00</td>
+                <td class="money">$169.00</td>
+                <td class="money">$150.00</td>
+                <td class="money">$150.00</td>
+                <td>11.00%</td>
+                <td class="neutral">$0.00</td>
+                <td>
+                  <div class="badges">
+                    <span class="badge good">🏆 Mínimo histórico</span>
+                  </div>
+                </td>
+              </tr>
+            
+              <tr>
+                <td class="rank">14</td>
+                <td>
+                  <div class="book-cell">
+                    <img class="cover" src="https://images.cdn1.buscalibre.com/fit-in/150x230/16/5e/165e529a5e49702f9f6a52c5c0a9a18d.jpg" alt="No te creas todo lo que piensas" />
+                    <div class="book-meta">
+                      <div class="book-title">No te creas todo lo que piensas</div>
+                      <div class="book-author">Joseph Nguyen</div>
+                      <div class="book-link"><a href="https://www.buscalibre.com.mx/libro-no-te-creas-todo-lo-que-piensas/9786073853033/p/64058424" target="_blank" rel="noopener noreferrer">Abrir libro</a></div>
+                    </div>
+                  </div>
+                </td>
+                <td class="score">55.00</td>
+                <td class="money">$249.00</td>
+                <td class="money">N/D</td>
+                <td class="money">$249.00</td>
+                <td class="money">$249.00</td>
+                <td>N/D</td>
+                <td class="neutral">$0.00</td>
+                <td>
+                  <div class="badges">
+                    <span class="badge good">🏆 Mínimo histórico</span>
+                  </div>
+                </td>
+              </tr>
+            
+              <tr>
+                <td class="rank">15</td>
+                <td>
+                  <div class="book-cell">
+                    <img class="cover" src="https://images.cdn1.buscalibre.com/fit-in/150x230/04/04/0404d10f1a1416149503f3d605b81311.jpg" alt="Alas de hierro (Empíreo 2) con Cantos Tintados" />
+                    <div class="book-meta">
+                      <div class="book-title">Alas de hierro (Empíreo 2) con Cantos Tintados</div>
+                      <div class="book-author">Rebecca Yarros</div>
+                      <div class="book-link"><a href="https://www.buscalibre.com.mx/libro-alas-de-hierro-empireo-2-con-cantos-tintados/9786073925037/p/64618769" target="_blank" rel="noopener noreferrer">Abrir libro</a></div>
+                    </div>
+                  </div>
+                </td>
+                <td class="score">50.00</td>
+                <td class="money">$598.00</td>
+                <td class="money">N/D</td>
+                <td class="money">$598.00</td>
+                <td class="money">$598.00</td>
+                <td>N/D</td>
+                <td class="neutral">$0.00</td>
+                <td>
+                  <div class="badges">
+                    <span class="badge good">🏆 Mínimo histórico</span>
+                  </div>
+                </td>
+              </tr>
+            
+              <tr>
+                <td class="rank">16</td>
+                <td>
+                  <div class="book-cell">
+                    <img class="cover" src="https://images.cdn3.buscalibre.com/fit-in/150x230/bd/49/bd49b83a698261110544d15ca51f3ee8.jpg" alt="Hábitos Atómicos" />
+                    <div class="book-meta">
+                      <div class="book-title">Hábitos Atómicos</div>
+                      <div class="book-author">James Clear</div>
+                      <div class="book-link"><a href="https://www.buscalibre.com.mx/libro-habitos-atomicos/9786077476719/p/51505115" target="_blank" rel="noopener noreferrer">Abrir libro</a></div>
+                    </div>
+                  </div>
+                </td>
+                <td class="score">50.00</td>
+                <td class="money">$390.00</td>
+                <td class="money">$399.00</td>
+                <td class="money">$390.00</td>
+                <td class="money">$390.00</td>
+                <td>0.00%</td>
+                <td class="neutral">$0.00</td>
+                <td>
+                  <div class="badges">
+                    <span class="badge good">🏆 Mínimo histórico</span>
+                  </div>
+                </td>
+              </tr>
+            
+        </tbody>
+      </table>
+    </section>
+  </div>
+</body>
+</html>

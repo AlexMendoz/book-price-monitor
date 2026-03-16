@@ -1,0 +1,30 @@
+{
+  "name": "book-price-monitor",
+  "version": "1.0.0",
+  "description": "Monitor personal de precios de libros",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "generate": "drizzle-kit generate",
+    "migrate": "drizzle-kit migrate",
+    "list-books": "tsx src/scripts/listBooks.ts",
+    "chart": "tsx src/scripts/generateBookChart.ts",
+    "rank-deals": "tsx src/scripts/rankDeals.ts",
+    "rank-deals-html": "tsx src/scripts/generateDealsRankingHtml.ts",
+    "send-telegram": "tsx src/scripts/sendDealsTelegram.ts",
+    "run-job": "tsx src/scripts/runScheduledJob.ts",
+    "telegram-bot": "tsx src/scripts/runTelegramBotPolling.ts"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.7.0",
+    "dotenv": "^16.4.7",
+    "drizzle-orm": "^0.40.0",
+    "playwright": "^1.51.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "drizzle-kit": "^0.30.4",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  }
+}

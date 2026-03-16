@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Historial de precios - No te creas todo lo que piensas</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 24px;
+      background: #f7f7f7;
+      color: #222;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+
+    h1 {
+      margin-bottom: 8px;
+    }
+
+    .meta {
+      margin-bottom: 24px;
+      color: #555;
+    }
+
+    .chart-block {
+      margin-bottom: 36px;
+    }
+
+    canvas {
+      width: 100% !important;
+      max-width: 100%;
+      height: 420px !important;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 24px;
+      font-size: 14px;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: left;
+    }
+
+    th {
+      background: #f0f0f0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>No te creas todo lo que piensas</h1>
+    <div class="meta">
+      Autor: Joseph Nguyen<br />
+      Moneda: MXN
+    </div>
+
+    <div class="chart-block">
+      <h2>Precios</h2>
+      <canvas id="priceChart"></canvas>
+    </div>
+
+    <div class="chart-block">
+      <h2>Descuento (%)</h2>
+      <canvas id="discountChart"></canvas>
+    </div>
+
+    <h2>Historial tabular</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Precio lista</th>
+          <th>Precio descuento</th>
+          <th>Descuento %</th>
+        </tr>
+      </thead>
+      <tbody>
+        
+          <tr>
+            <td>2026-03-16T03:12:15.179Z</td>
+            <td></td>
+            <td>249</td>
+            <td></td>
+          </tr>
+        
+          <tr>
+            <td>2026-03-16T03:32:07.256Z</td>
+            <td></td>
+            <td>249</td>
+            <td></td>
+          </tr>
+        
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    const labels = ["2026-03-16T03:12:15.179Z","2026-03-16T03:32:07.256Z"];
+    const listPrices = [null,null];
+    const discountedPrices = [249,249];
+    const discountPercents = [null,null];
+
+    new Chart(document.getElementById('priceChart'), {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Precio lista',
+            data: listPrices
+          },
+          {
+            label: 'Precio con descuento',
+            data: discountedPrices
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false
+      }
+    });
+
+    new Chart(document.getElementById('discountChart'), {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Descuento %',
+            data: discountPercents
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false
+      }
+    });
+  </script>
+</body>
+</html>
