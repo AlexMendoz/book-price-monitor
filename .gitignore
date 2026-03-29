@@ -49,6 +49,7 @@ Thumbs.db
 # =========================
 # Playwright
 # =========================
+playwright-user-data/
 playwright-report/
 test-results/
 blob-report/
@@ -68,6 +69,8 @@ temp/
 # =========================
 *.sqlite
 *.db
+data/*.db-wal
+data/*.db-shm
 
 # =========================
 # Scrap data / outputs
