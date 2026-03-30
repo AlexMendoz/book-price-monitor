@@ -1,277 +1,165 @@
-# 📚 Book Price Monitor
+# Book Price Monitor
 
-Sistema de monitoreo de precios de libros en Buscalibre con alertas automáticas vía Telegram.
+Monitor personal de precios de libros en Buscalibre con almacenamiento histórico en SQLite y alertas por Telegram.
 
----
+## Descripcion
 
-## 🚀 Descripción
+El proyecto scrapea una o varias wishlists de Buscalibre, guarda snapshots de precios, calcula ranking de ofertas y permite consultar resultados por bot de Telegram.
 
-Este proyecto es un **web scraper** desarrollado con **TypeScript + Playwright** que permite monitorear precios de libros desde una wishlist de Buscalibre.
+Flujo principal:
 
-### Objetivo principal
+1. Lee wishlists configuradas en `src/config/wishlists.ts`.
+2. Extrae libros y precios con Playwright.
+3. Hace upsert de libros/listas y guarda snapshot de precios.
+4. Calcula indicadores de oferta (minimo historico, bajada vs anterior, descuento alto, posibles descuentos sospechosos).
+5. Publica resultados por Telegram (job automatico o bot interactivo).
 
-* Extraer libros desde una wishlist
-* Consultar precios periódicamente
-* Detectar cambios y ofertas
-* Guardar historial de precios
-* Enviar alertas vía Telegram
+## Stack
 
----
+- Node.js 22+
+- TypeScript
+- Playwright
+- SQLite (`better-sqlite3`)
+- Drizzle ORM / Drizzle Kit
+- Telegram Bot API (HTTP)
 
-## 🧠 Arquitectura
+## Estructura
 
 ```text
-Playwright Scraper
-        ↓
-Extracción de wishlist
-        ↓
-Scraping de productos
-        ↓
-Persistencia de datos
-        ↓
-Comparación de precios
-        ↓
-Alertas (Telegram)
-```
-
----
-
-## 🛠️ Stack tecnológico
-
-* Node.js **22.x**
-* TypeScript **5.8.3**
-* Playwright **1.51.1**
-* dotenv **16.4.7**
-* tsx **4.19.3**
-* @types/node **22.13.14**
-
----
-
-## 📦 Dependencias
-
-### Producción
-
-```json
-{
-  "dotenv": "16.4.7",
-  "playwright": "1.51.1"
-}
-```
-
-### Desarrollo
-
-```json
-{
-  "@types/node": "22.13.14",
-  "tsx": "4.19.3",
-  "typescript": "5.8.3"
-}
-```
-
----
-
-## 📁 Estructura del proyecto
-
-```bash
 src/
-│
-├── index.ts
-│
-├── scraper/
-│   ├── wishlist.ts
-│   └── product.ts
-│
-├── services/
-│   ├── telegramBotApi.ts
-│   └── telegramCommandsService.ts
-│
-├── scripts/
-│   ├── runTelegramBotPolling.ts
-│   └── runPriceCheck.ts
-│
-├── utils/
-│   └── logger.ts
+  config/
+    wishlists.ts
+  db/
+    client.ts
+    schema.ts
+  scraper/
+    wishlistScraper.ts
+  services/
+    bookService.ts
+    wishlistService.ts
+    priceSnapshotService.ts
+    rankingService.ts
+    telegramService.ts
+    telegramBotApi.ts
+    telegramCommandsService.ts
+  scripts/
+    runScheduledJob.ts
+    runTelegramBotPolling.ts
+    listBooks.ts
+    generateBookChart.ts
+    rankDeals.ts
+    generateDealsRankingHtml.ts
+    sendDealsTelegram.ts
+  index.ts
 ```
 
----
+## Base de datos
 
-## ⚙️ Requisitos
+La base se crea en `./data/prices.db` por defecto (o en `DATABASE_URL` si se define).
 
-* Node.js **22+**
-* npm **10+**
+Tablas principales:
+
+- `wishlists`
+- `books`
+- `wishlist_books`
+- `price_snapshots`
+
+Migraciones:
+
+- SQL generado en `drizzle/`
+- Config en `drizzle.config.ts`
+
+## Instalacion
 
 ```bash
-node -v
-npm -v
-```
-
----
-
-## 📥 Instalación
-
-```bash
-git clone <repo-url>
-cd book-price-monitor
-
 npm install
-npm run playwright:install
 ```
 
-En Linux:
+Instalar navegadores de Playwright:
 
 ```bash
-npm run playwright:install-deps
+npx playwright install
 ```
 
----
-
-## 📜 Scripts disponibles
-
-```json
-{
-  "scripts": {
-    "dev": "tsx src/index.ts",
-    "build": "tsc",
-    "start": "node dist/index.js",
-    "scrape": "tsx src/scripts/runPriceCheck.ts",
-    "bot": "tsx src/scripts/runTelegramBotPolling.ts",
-    "check": "tsc --noEmit",
-    "playwright:install": "playwright install",
-    "playwright:install-deps": "playwright install-deps"
-  }
-}
-```
-
----
-
-## ▶️ Uso
-
-### Ejecutar scraper
+En Linux, si hace falta:
 
 ```bash
-npm run scrape
+npx playwright install-deps
 ```
 
-### Ejecutar bot de Telegram
+## Configuracion
 
-```bash
-npm run bot
-```
-
-### Desarrollo
-
-```bash
-npm run dev
-```
-
-### Producción
-
-```bash
-npm run build
-npm run start
-```
-
----
-
-## 🔐 Variables de entorno
-
-Crea un archivo `.env`:
+1. Crea `.env` basado en `.env.example`.
+2. Define estas variables:
 
 ```env
+DATABASE_URL=./data/prices.db
 TELEGRAM_BOT_TOKEN=tu_token
 TELEGRAM_CHAT_ID=tu_chat_id
-WISHLIST_URL=https://www.buscalibre.com.mx/v2/whilist.html
 ```
 
----
+Notas:
 
-## 🤖 Telegram Bot
+- `WISHLIST_URL` aparece en `.env.example`, pero el flujo actual usa `src/config/wishlists.ts`.
+- Puedes configurar multiples listas en `src/config/wishlists.ts`.
 
-El bot permite:
+## Scripts NPM
 
-* Consultar precios
-* Ejecutar scraping manual
-* Recibir alertas
-* Usar botones interactivos
-
-⚠️ Importante:
-
-Debes responder los `callback_query` inmediatamente:
-
-```ts
-await telegramAnswerCallbackQuery(callbackQuery.id);
+```json
+{
+  "dev": "tsx src/index.ts",
+  "generate": "drizzle-kit generate",
+  "migrate": "drizzle-kit migrate",
+  "list-books": "tsx src/scripts/listBooks.ts",
+  "chart": "tsx src/scripts/generateBookChart.ts",
+  "rank-deals": "tsx src/scripts/rankDeals.ts",
+  "rank-deals-html": "tsx src/scripts/generateDealsRankingHtml.ts",
+  "send-telegram": "tsx src/scripts/sendDealsTelegram.ts",
+  "run-job": "tsx src/scripts/runScheduledJob.ts",
+  "telegram-bot": "tsx src/scripts/runTelegramBotPolling.ts"
+}
 ```
 
-Error común:
+Uso recomendado hoy:
 
-```text
-Bad Request: query is too old and response timeout expired
-```
+- `npm run dev`: scrapeo y persistencia basica.
+- `npm run run-job`: scrapeo + ranking por wishlist + envio a Telegram.
+- `npm run telegram-bot`: bot interactivo (`/start`, `/listas`, `/ofertas`).
+- `npm run list-books`: listar libros guardados.
+- `npm run chart -- <bookId>`: generar HTML con historial de un libro.
 
----
+## Bot de Telegram
 
-## 📊 Funcionalidad
+El bot hace polling por `getUpdates` y ofrece:
 
-### ✔ Extracción
+- Seleccion de wishlist.
+- Vistas por categoria:
+  - Top ofertas
+  - Minimos historicos
+  - Sospechosos
+  - Descuento alto
 
-* Wishlist pública
-* Links de productos
+Comandos registrados:
 
-### ✔ Monitoreo
+- `/start`
+- `/listas`
+- `/ofertas`
 
-* Precio actual
-* Precio anterior
-* Descuentos
+Si el bot no responde al correr `npm run telegram-bot`, revisa:
 
-### ✔ Análisis
+- `TELEGRAM_BOT_TOKEN` valido en `.env`.
+- Que no haya webhook activo previo. El script de polling ahora ejecuta `deleteWebhook` al iniciar para evitar conflicto `409 Conflict`.
 
-* Cambios de precio
-* Ofertas detectadas
-* Histórico
+## Automatizacion (cron)
 
-### ✔ Alertas
-
-* Telegram automático
-* Acciones manuales
-
----
-
-## ⏱️ Automatización (cron)
-
-Ejecutar cada 6 horas:
+Ejemplo para correr el job cada 6 horas:
 
 ```bash
-0 */6 * * * cd /ruta/a/book-price-monitor && /usr/bin/npm run scrape >> scraper.log 2>&1
+0 */6 * * * cd /ruta/a/book-price-monitor && /usr/bin/npm run run-job >> job.log 2>&1
 ```
 
----
+## Estado actual
 
-## ⚠️ Consideraciones
+El nucleo scraper + base + bot por wishlist esta funcionando y alineado.
 
-* Uso educativo
-* Respetar términos del sitio
-* Evitar scraping excesivo
-
----
-
-## 🚧 Roadmap
-
-* [ ] Base de datos (SQLite / PostgreSQL)
-* [ ] Dashboard web
-* [ ] Múltiples wishlists
-* [ ] Alertas avanzadas
-* [ ] Docker
-* [ ] Retry strategy
-* [ ] Logging estructurado
-
----
-
-## 🧑‍💻 Autor
-
-
-
----
-
-## 📝 Licencia
-
-MIT
+Hay scripts de ranking global (`rank-deals`, `rank-deals-html`, `send-telegram`) que dependen de una funcion `getDealRanking` que no existe en el servicio actual (`rankingService` exporta `getDealRankingByWishlist`). Se recomienda ajustarlos o usar `run-job`/`telegram-bot` mientras tanto.

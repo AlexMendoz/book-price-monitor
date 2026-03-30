@@ -76,13 +76,13 @@ export async function getDealRankingByWishlist(wishlistId: number): Promise<Rank
       historicalValues.length > 0 ? Math.min(...historicalValues) : null;
 
     const dropVsPrevious =
-      current.discountedPrice !== null && previous?.discountedPrice !== null
+      current.discountedPrice != null && previous?.discountedPrice != null
         ? previous.discountedPrice - current.discountedPrice
         : null;
 
     const savingsVsPreviousPercent =
-      dropVsPrevious !== null &&
-      previous?.discountedPrice !== null &&
+      dropVsPrevious != null &&
+      previous?.discountedPrice != null &&
       previous.discountedPrice > 0
         ? (dropVsPrevious / previous.discountedPrice) * 100
         : null;
@@ -93,15 +93,15 @@ export async function getDealRankingByWishlist(wishlistId: number): Promise<Rank
       current.discountedPrice <= historicalMinDiscountedPrice;
 
     const hasHighDiscount =
-      current.discountPercent !== null && current.discountPercent >= 40;
+      current.discountPercent != null && current.discountPercent >= 40;
 
     const looksLikeInflatedBasePrice =
-      current.listPrice !== null &&
-      current.discountedPrice !== null &&
-      current.discountPercent !== null &&
-      previous?.listPrice !== null &&
-      previous?.discountedPrice !== null &&
-      previous?.discountPercent !== null &&
+      current.listPrice != null &&
+      current.discountedPrice != null &&
+      current.discountPercent != null &&
+      previous?.listPrice != null &&
+      previous?.discountedPrice != null &&
+      previous?.discountPercent != null &&
       current.listPrice > previous.listPrice &&
       current.discountPercent > previous.discountPercent &&
       current.discountedPrice >= previous.discountedPrice;
@@ -110,7 +110,7 @@ export async function getDealRankingByWishlist(wishlistId: number): Promise<Rank
     if (isHistoricalLow) dealScore += 50;
     if ((dropVsPrevious ?? 0) > 0) dealScore += 30;
     if (hasHighDiscount) dealScore += 20;
-    if (savingsVsPreviousPercent !== null) dealScore += Math.min(savingsVsPreviousPercent, 25);
+    if (savingsVsPreviousPercent != null) dealScore += Math.min(savingsVsPreviousPercent, 25);
     if (looksLikeInflatedBasePrice) dealScore -= 25;
 
     ranking.push({

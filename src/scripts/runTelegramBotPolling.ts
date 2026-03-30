@@ -1,15 +1,25 @@
 import 'dotenv/config';
-import { telegramGetUpdates, telegramSetCommands } from '../services/telegramBotApi';
+import {
+  telegramDeleteWebhook,
+  telegramGetUpdates,
+  telegramSetCommands,
+} from '../services/telegramBotApi';
 import {
   handleTelegramCallbackQuery,
   handleTelegramMessage,
 } from '../services/telegramCommandsService';
 
 async function main() {
+  await telegramDeleteWebhook({
+    dropPendingUpdates: false,
+  });
+  console.log('Webhook removido. Iniciando modo polling...');
+
   await telegramSetCommands();
   console.log('Comandos configurados.');
 
   let offset: number | undefined = undefined;
+  console.log('Bot escuchando updates...');
 
   while (true) {
     try {
