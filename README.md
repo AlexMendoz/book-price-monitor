@@ -138,6 +138,7 @@ El bot hace polling por `getUpdates` y ofrece:
   - Minimos historicos
   - Sospechosos
   - Descuento alto
+  - Precios historicos por libro (lista por wishlist + detalle por seleccion)
 
 Comandos registrados:
 
