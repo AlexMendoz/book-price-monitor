@@ -1,7 +1,9 @@
 import { getAllWishlists } from './reportService';
 import { getDealRankingByWishlist } from './rankingService';
+import { generateAllBooksChartReport } from '../scripts/generateAllBooksChart';
 import {
   telegramAnswerCallbackQuery,
+  telegramSendDocument,
   telegramSendMessage,
 } from './telegramBotApi';
 
@@ -23,6 +25,11 @@ export async function handleTelegramMessage(message: any) {
 
   if (text === '/listas' || text === '/ofertas') {
     await sendWishlistSelector(chatId);
+    return;
+  }
+
+  if (text === '/reporte_global') {
+    await sendGlobalReportHtml(chatId);
     return;
   }
 }
@@ -68,6 +75,16 @@ export async function handleTelegramCallbackQuery(callbackQuery: any) {
     await sendWishlistSelector(chatId);
     return;
   }
+
+  if (data === 'global_report_html') {
+    await telegramAnswerCallbackQuery({
+      callbackQueryId,
+      text: 'Preparando reporte global...',
+    });
+
+    await sendGlobalReportHtml(chatId);
+    return;
+  }
 }
 
 async function sendWishlistSelector(chatId: string | number) {
@@ -86,6 +103,12 @@ async function sendWishlistSelector(chatId: string | number) {
     text: '<b>Selecciona una wishlist</b>',
     replyMarkup: {
       inline_keyboard: [
+        [
+          {
+            text: '📄 Reporte global HTML',
+            callback_data: 'global_report_html',
+          },
+        ],
         ...wishlists.map((wishlist) => [
           {
             text: wishlist.name,
@@ -95,6 +118,30 @@ async function sendWishlistSelector(chatId: string | number) {
       ],
     },
   });
+}
+
+async function sendGlobalReportHtml(chatId: string | number) {
+  try {
+    await telegramSendMessage({
+      chatId,
+      text: 'Generando el reporte global HTML, espera un momento...',
+    });
+
+    const reportPath = await generateAllBooksChartReport({ embedImages: true });
+
+    await telegramSendDocument({
+      chatId,
+      filePath: reportPath,
+      caption: 'Reporte global de libros en HTML',
+    });
+  } catch (error) {
+    await telegramSendMessage({
+      chatId,
+      text:
+        'No pude generar o enviar el reporte global.\n\n' +
+        escapeHtml(getErrorMessage(error)),
+    });
+  }
 }
 
 async function sendWishlistActionSelector(chatId: string | number, wishlistId: number) {
@@ -281,4 +328,12 @@ function escapeHtml(value: string): string {
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#039;');
+}
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return 'Error desconocido';
 }

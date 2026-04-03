@@ -27,7 +27,7 @@ async function main() {
   const author = history[0].author ?? 'Autor desconocido';
   const currency = history[0].currency ?? 'MXN';
 
-  const labels = history.map((row) => row.scrapedAt);
+  const labels = history.map((row) => formatCdmxDateTime(row.scrapedAt));
   const listPrices = history.map((row) => row.listPrice);
   const discountedPrices = history.map((row) => row.discountedPrice);
   const discountPercents = history.map((row) => row.discountPercent);
@@ -125,7 +125,7 @@ async function main() {
       <tbody>
         ${history.map(row => `
           <tr>
-            <td>${escapeHtml(row.scrapedAt ?? '')}</td>
+            <td>${escapeHtml(formatCdmxDateTime(row.scrapedAt ?? ''))}</td>
             <td>${row.listPrice ?? ''}</td>
             <td>${row.discountedPrice ?? ''}</td>
             <td>${row.discountPercent ?? ''}</td>
@@ -213,6 +213,20 @@ function escapeHtml(value: string): string {
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#039;');
+}
+
+function formatCdmxDateTime(value: string): string {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat('es-MX', {
+    timeZone: 'America/Mexico_City',
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(date);
 }
 
 main().catch((error) => {

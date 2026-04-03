@@ -36,6 +36,25 @@ export async function getBookPriceHistory(bookId: number) {
     .orderBy(asc(priceSnapshots.scrapedAt), asc(priceSnapshots.id));
 }
 
+export async function getAllBooksPriceHistory() {
+  return db
+    .select({
+      bookId: books.id,
+      title: books.title,
+      author: books.author,
+      productUrl: books.productUrl,
+      imageUrl: books.imageUrl,
+      currency: priceSnapshots.currency,
+      listPrice: priceSnapshots.listPrice,
+      discountedPrice: priceSnapshots.discountedPrice,
+      discountPercent: priceSnapshots.discountPercent,
+      scrapedAt: priceSnapshots.scrapedAt,
+    })
+    .from(priceSnapshots)
+    .innerJoin(books, eq(books.id, priceSnapshots.bookId))
+    .orderBy(asc(books.title), asc(priceSnapshots.scrapedAt), asc(priceSnapshots.id));
+}
+
 export async function getAllWishlists() {
   return db
     .select({

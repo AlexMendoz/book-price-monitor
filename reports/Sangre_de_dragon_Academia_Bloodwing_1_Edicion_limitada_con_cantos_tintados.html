@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Historial de precios - Sangre de dragón (Academia Bloodwing 1) Edición limitada con cantos tintados</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 24px;
+      background: #f7f7f7;
+      color: #222;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+
+    h1 {
+      margin-bottom: 8px;
+    }
+
+    .meta {
+      margin-bottom: 24px;
+      color: #555;
+    }
+
+    .chart-block {
+      margin-bottom: 36px;
+    }
+
+    canvas {
+      width: 100% !important;
+      max-width: 100%;
+      height: 420px !important;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 24px;
+      font-size: 14px;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: left;
+    }
+
+    th {
+      background: #f0f0f0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Sangre de dragón (Academia Bloodwing 1) Edición limitada con cantos tintados</h1>
+    <div class="meta">
+      Autor: Briar Boleyn<br />
+      Moneda: MXN
+    </div>
+
+    <div class="chart-block">
+      <h2>Precios</h2>
+      <canvas id="priceChart"></canvas>
+    </div>
+
+    <div class="chart-block">
+      <h2>Descuento (%)</h2>
+      <canvas id="discountChart"></canvas>
+    </div>
+
+    <h2>Historial tabular</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Precio lista</th>
+          <th>Precio descuento</th>
+          <th>Descuento %</th>
+        </tr>
+      </thead>
+      <tbody>
+        
+          <tr>
+            <td>2026-03-16T19:55:20.681Z</td>
+            <td>1297.32</td>
+            <td>648.66</td>
+            <td>50</td>
+          </tr>
+        
+          <tr>
+            <td>2026-03-16T20:01:12.480Z</td>
+            <td>1297.32</td>
+            <td>648.66</td>
+            <td>50</td>
+          </tr>
+        
+          <tr>
+            <td>2026-03-16T20:22:14.129Z</td>
+            <td>1297.32</td>
+            <td>648.66</td>
+            <td>50</td>
+          </tr>
+        
+          <tr>
+            <td>2026-03-16T20:22:21.877Z</td>
+            <td>1297.32</td>
+            <td>648.66</td>
+            <td>50</td>
+          </tr>
+        
+          <tr>
+            <td>2026-03-16T20:22:49.426Z</td>
+            <td>1297.32</td>
+            <td>648.66</td>
+            <td>50</td>
+          </tr>
+        
+          <tr>
+            <td>2026-03-16T20:22:57.184Z</td>
+            <td>1297.32</td>
+            <td>648.66</td>
+            <td>50</td>
+          </tr>
+        
+          <tr>
+            <td>2026-03-29T22:10:18.025Z</td>
+            <td>1198.96</td>
+            <td>599.48</td>
+            <td>50</td>
+          </tr>
+        
+          <tr>
+            <td>2026-03-29T22:10:44.113Z</td>
+            <td>1198.96</td>
+            <td>599.48</td>
+            <td>50</td>
+          </tr>
+        
+          <tr>
+            <td>2026-03-29T22:11:10.594Z</td>
+            <td>1198.96</td>
+            <td>599.48</td>
+            <td>50</td>
+          </tr>
+        
+          <tr>
+            <td>2026-03-29T22:11:18.271Z</td>
+            <td>1198.96</td>
+            <td>599.48</td>
+            <td>50</td>
+          </tr>
+        
+          <tr>
+            <td>2026-03-30T06:24:32.525Z</td>
+            <td>1198.96</td>
+            <td>599.48</td>
+            <td>50</td>
+          </tr>
+        
+          <tr>
+            <td>2026-03-30T06:24:48.499Z</td>
+            <td>1198.96</td>
+            <td>599.48</td>
+            <td>50</td>
+          </tr>
+        
+          <tr>
+            <td>2026-03-30T13:02:45.046Z</td>
+            <td>1198.96</td>
+            <td>719.38</td>
+            <td>40</td>
+          </tr>
+        
+          <tr>
+            <td>2026-03-30T13:02:52.305Z</td>
+            <td>1198.96</td>
+            <td>719.38</td>
+            <td>40</td>
+          </tr>
+        
+          <tr>
+            <td>2026-04-03T01:24:42.247Z</td>
+            <td>1027.22</td>
+            <td>564.97</td>
+            <td>45</td>
+          </tr>
+        
+          <tr>
+            <td>2026-04-03T01:25:29.370Z</td>
+            <td>1027.22</td>
+            <td>564.97</td>
+            <td>45</td>
+          </tr>
+        
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    const labels = ["2026-03-16T19:55:20.681Z","2026-03-16T20:01:12.480Z","2026-03-16T20:22:14.129Z","2026-03-16T20:22:21.877Z","2026-03-16T20:22:49.426Z","2026-03-16T20:22:57.184Z","2026-03-29T22:10:18.025Z","2026-03-29T22:10:44.113Z","2026-03-29T22:11:10.594Z","2026-03-29T22:11:18.271Z","2026-03-30T06:24:32.525Z","2026-03-30T06:24:48.499Z","2026-03-30T13:02:45.046Z","2026-03-30T13:02:52.305Z","2026-04-03T01:24:42.247Z","2026-04-03T01:25:29.370Z"];
+    const listPrices = [1297.32,1297.32,1297.32,1297.32,1297.32,1297.32,1198.96,1198.96,1198.96,1198.96,1198.96,1198.96,1198.96,1198.96,1027.22,1027.22];
+    const discountedPrices = [648.66,648.66,648.66,648.66,648.66,648.66,599.48,599.48,599.48,599.48,599.48,599.48,719.38,719.38,564.97,564.97];
+    const discountPercents = [50,50,50,50,50,50,50,50,50,50,50,50,40,40,45,45];
+
+    new Chart(document.getElementById('priceChart'), {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Precio lista',
+            data: listPrices
+          },
+          {
+            label: 'Precio con descuento',
+            data: discountedPrices
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false
+      }
+    });
+
+    new Chart(document.getElementById('discountChart'), {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Descuento %',
+            data: discountPercents
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false
+      }
+    });
+  </script>
+</body>
+</html>
