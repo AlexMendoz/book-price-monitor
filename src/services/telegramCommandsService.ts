@@ -7,6 +7,8 @@ import {
   telegramSendMessage,
 } from './telegramBotApi';
 
+const BOOKS_PAGE_SIZE = 8;
+
 export async function handleTelegramMessage(message: any) {
   const chatId = message?.chat?.id;
   const text = (message?.text ?? '').trim();
@@ -62,7 +64,46 @@ export async function handleTelegramCallbackQuery(callbackQuery: any) {
       text: 'Cargando resultados...',
     });
 
+    if (action === 'historical_prices') {
+      await sendWishlistBookSelector(chatId, wishlistId, 0);
+      return;
+    }
+
     await sendWishlistDealsByAction(chatId, wishlistId, action);
+    return;
+  }
+
+  if (data.startsWith('wishlist_books_page:')) {
+    const [, wishlistIdRaw, pageRaw] = data.split(':');
+    const wishlistId = Number(wishlistIdRaw);
+    const page = Number(pageRaw);
+
+    await telegramAnswerCallbackQuery({
+      callbackQueryId,
+      text: 'Cargando libros...',
+    });
+
+    await sendWishlistBookSelector(chatId, wishlistId, Number.isFinite(page) ? page : 0);
+    return;
+  }
+
+  if (data.startsWith('wishlist_book:')) {
+    const [, wishlistIdRaw, bookIdRaw, pageRaw] = data.split(':');
+    const wishlistId = Number(wishlistIdRaw);
+    const bookId = Number(bookIdRaw);
+    const page = Number(pageRaw);
+
+    await telegramAnswerCallbackQuery({
+      callbackQueryId,
+      text: 'Cargando detalle...',
+    });
+
+    await sendBookHistoricalPriceSummary(
+      chatId,
+      wishlistId,
+      bookId,
+      Number.isFinite(page) ? page : 0
+    );
     return;
   }
 
@@ -161,6 +202,9 @@ async function sendWishlistActionSelector(chatId: string | number, wishlistId: n
         [
           { text: '⚠️ Sospechosos', callback_data: `wishlist_action:${wishlistId}:suspicious` },
           { text: '🔥 Descuento alto', callback_data: `wishlist_action:${wishlistId}:high_discount` },
+        ],
+        [
+          { text: '📚 Precios históricos', callback_data: `wishlist_action:${wishlistId}:historical_prices` },
         ],
         [
           { text: '⬅️ Volver a listas', callback_data: 'go_back_wishlists' },
@@ -293,6 +337,150 @@ async function sendWishlistDealsByAction(
           { text: '📂 Ver categorías', callback_data: `wishlist:${wishlistId}` },
           { text: '⬅️ Volver a listas', callback_data: 'go_back_wishlists' },
         ],
+      ],
+    },
+  });
+}
+
+async function sendWishlistBookSelector(
+  chatId: string | number,
+  wishlistId: number,
+  page: number
+) {
+  const wishlists = await getAllWishlists();
+  const wishlist = wishlists.find((w) => w.id === wishlistId);
+
+  if (!wishlist) {
+    await telegramSendMessage({
+      chatId,
+      text: 'No encontré esa wishlist.',
+    });
+    return;
+  }
+
+  const ranking = await getDealRankingByWishlist(wishlistId);
+
+  if (ranking.length === 0) {
+    await telegramSendMessage({
+      chatId,
+      text:
+        `<b>${escapeHtml(wishlist.name)}</b>\n\n` +
+        'No hay historial disponible para esta wishlist todavía.',
+      replyMarkup: {
+        inline_keyboard: [
+          [{ text: '📂 Ver categorías', callback_data: `wishlist:${wishlistId}` }],
+          [{ text: '⬅️ Volver a listas', callback_data: 'go_back_wishlists' }],
+        ],
+      },
+    });
+    return;
+  }
+
+  const books = [...ranking].sort((a, b) => a.title.localeCompare(b.title, 'es'));
+  const totalPages = Math.max(1, Math.ceil(books.length / BOOKS_PAGE_SIZE));
+  const safePage = Math.min(Math.max(page, 0), totalPages - 1);
+  const start = safePage * BOOKS_PAGE_SIZE;
+  const items = books.slice(start, start + BOOKS_PAGE_SIZE);
+
+  const keyboard: Array<Array<{ text: string; callback_data: string }>> = items.map((item) => [
+    {
+      text: item.title.length > 55 ? `${item.title.slice(0, 52)}...` : item.title,
+      callback_data: `wishlist_book:${wishlistId}:${item.bookId}:${safePage}`,
+    },
+  ]);
+
+  const paginationRow: Array<{ text: string; callback_data: string }> = [];
+  if (safePage > 0) {
+    paginationRow.push({
+      text: '⬅️ Anterior',
+      callback_data: `wishlist_books_page:${wishlistId}:${safePage - 1}`,
+    });
+  }
+  if (safePage < totalPages - 1) {
+    paginationRow.push({
+      text: 'Siguiente ➡️',
+      callback_data: `wishlist_books_page:${wishlistId}:${safePage + 1}`,
+    });
+  }
+  if (paginationRow.length > 0) {
+    keyboard.push(paginationRow);
+  }
+
+  keyboard.push([{ text: '📂 Ver categorías', callback_data: `wishlist:${wishlistId}` }]);
+  keyboard.push([{ text: '⬅️ Volver a listas', callback_data: 'go_back_wishlists' }]);
+
+  await telegramSendMessage({
+    chatId,
+    text:
+      '<b>📚 Selecciona un libro</b>\n' +
+      `<b>Wishlist:</b> ${escapeHtml(wishlist.name)}\n` +
+      `<b>Página:</b> ${safePage + 1}/${totalPages}`,
+    replyMarkup: {
+      inline_keyboard: keyboard,
+    },
+  });
+}
+
+async function sendBookHistoricalPriceSummary(
+  chatId: string | number,
+  wishlistId: number,
+  bookId: number,
+  page: number
+) {
+  const wishlists = await getAllWishlists();
+  const wishlist = wishlists.find((w) => w.id === wishlistId);
+
+  if (!wishlist) {
+    await telegramSendMessage({
+      chatId,
+      text: 'No encontré esa wishlist.',
+    });
+    return;
+  }
+
+  const ranking = await getDealRankingByWishlist(wishlistId);
+  const item = ranking.find((row) => row.bookId === bookId);
+
+  if (!item) {
+    await telegramSendMessage({
+      chatId,
+      text:
+        `<b>${escapeHtml(wishlist.name)}</b>\n\n` +
+        'No encontré historial para ese libro.',
+      replyMarkup: {
+        inline_keyboard: [
+          [{ text: '📚 Volver al listado', callback_data: `wishlist_books_page:${wishlistId}:${page}` }],
+          [{ text: '📂 Ver categorías', callback_data: `wishlist:${wishlistId}` }],
+          [{ text: '⬅️ Volver a listas', callback_data: 'go_back_wishlists' }],
+        ],
+      },
+    });
+    return;
+  }
+
+  const lines: string[] = [];
+  lines.push('<b>📖 Precio histórico del libro</b>');
+  lines.push(`<b>Wishlist:</b> ${escapeHtml(wishlist.name)}`);
+  lines.push('');
+  lines.push(`<b>${escapeHtml(item.title)}</b>`);
+  lines.push(`Autor: ${escapeHtml(item.author ?? 'Autor desconocido')}`);
+  lines.push(`Precio actual (lista): ${formatMoney(item.currentListPrice, item.currency)}`);
+  lines.push(`Precio actual (descuento): ${formatMoney(item.currentDiscountedPrice, item.currency)}`);
+  lines.push(`Precio histórico más bajo: ${formatMoney(item.historicalMinDiscountedPrice, item.currency)}`);
+
+  if (item.productUrl) {
+    lines.push('');
+    lines.push(escapeHtml(item.productUrl));
+  }
+
+  await telegramSendMessage({
+    chatId,
+    text: lines.join('\n'),
+    replyMarkup: {
+      inline_keyboard: [
+        [{ text: '📚 Volver al listado', callback_data: `wishlist_books_page:${wishlistId}:${page}` }],
+        [{ text: '📂 Ver categorías', callback_data: `wishlist:${wishlistId}` }],
+        [{ text: '⬅️ Volver a listas', callback_data: 'go_back_wishlists' }],
       ],
     },
   });

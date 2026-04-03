@@ -132,3 +132,23 @@ export async function telegramSetCommands() {
 
   return response.json();
 }
+
+export async function telegramDeleteWebhook(input?: {
+  dropPendingUpdates?: boolean;
+}) {
+  const response = await fetch(`${getBaseUrl()}/deleteWebhook`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      drop_pending_updates: input?.dropPendingUpdates ?? false,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Error en deleteWebhook: ${response.status} ${await response.text()}`);
+  }
+
+  return response.json();
+}
