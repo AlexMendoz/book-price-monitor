@@ -38,7 +38,7 @@ Alertas (Telegram)
 
 ## 🛠️ Stack tecnológico
 
-* Node.js **22.x**
+* Node.js **20.x**
 * TypeScript **5.8.3**
 * Playwright **1.51.1**
 * dotenv **16.4.7**
@@ -97,7 +97,7 @@ src/
 
 ## ⚙️ Requisitos
 
-* Node.js **22+**
+* Node.js **20.x**
 * npm **10+**
 
 ```bash
@@ -113,15 +113,11 @@ npm -v
 git clone <repo-url>
 cd book-price-monitor
 
+nvm use
 npm install
-npm run playwright:install
 ```
 
-En Linux:
-
-```bash
-npm run playwright:install-deps
-```
+Si no usas `nvm`, instala Node 20.x manualmente antes de ejecutar `npm install`.
 
 ---
 
@@ -131,13 +127,15 @@ npm run playwright:install-deps
 {
   "scripts": {
     "dev": "tsx src/index.ts",
-    "build": "tsc",
-    "start": "node dist/index.js",
-    "scrape": "tsx src/scripts/runPriceCheck.ts",
-    "bot": "tsx src/scripts/runTelegramBotPolling.ts",
-    "check": "tsc --noEmit",
-    "playwright:install": "playwright install",
-    "playwright:install-deps": "playwright install-deps"
+    "list-books": "tsx src/scripts/listBooks.ts",
+    "chart": "tsx src/scripts/generateBookChart.ts",
+    "chart-all": "tsx src/scripts/generateAllBooksChart.ts",
+    "chart-all-shareable": "tsx src/scripts/generateShareableAllBooksChart.ts",
+    "rank-deals": "tsx src/scripts/rankDeals.ts",
+    "rank-deals-html": "tsx src/scripts/generateDealsRankingHtml.ts",
+    "send-telegram": "tsx src/scripts/sendDealsTelegram.ts",
+    "run-job": "tsx src/scripts/runScheduledJob.ts",
+    "telegram-bot": "tsx src/scripts/runTelegramBotPolling.ts"
   }
 }
 ```
@@ -146,29 +144,22 @@ npm run playwright:install-deps
 
 ## ▶️ Uso
 
-### Ejecutar scraper
-
-```bash
-npm run scrape
-```
-
-### Ejecutar bot de Telegram
-
-```bash
-npm run bot
-```
-
 ### Desarrollo
 
 ```bash
 npm run dev
 ```
 
-### Producción
+### Job programado no interactivo
 
 ```bash
-npm run build
-npm run start
+SCRAPER_HEADLESS=true SCRAPER_ALLOW_MANUAL_VERIFICATION=false npm run run-job
+```
+
+### Bot de Telegram
+
+```bash
+npm run telegram-bot
 ```
 
 ---
@@ -180,8 +171,13 @@ Crea un archivo `.env`:
 ```env
 TELEGRAM_BOT_TOKEN=tu_token
 TELEGRAM_CHAT_ID=tu_chat_id
-WISHLIST_URL=https://www.buscalibre.com.mx/v2/whilist.html
+DATABASE_URL=./data/prices.db
+SCRAPER_HEADLESS=true
+SCRAPER_ALLOW_MANUAL_VERIFICATION=false
+SCRAPER_WAIT_AFTER_LOAD_MS=3000
 ```
+
+`SCRAPER_ALLOW_MANUAL_VERIFICATION=false` evita que `run-job` espere `ENTER` cuando aparece una validación humana.
 
 ---
 
@@ -241,7 +237,7 @@ Bad Request: query is too old and response timeout expired
 Ejecutar cada 6 horas:
 
 ```bash
-0 */6 * * * cd /ruta/a/book-price-monitor && /usr/bin/npm run scrape >> scraper.log 2>&1
+0 */6 * * * cd /ruta/a/book-price-monitor && /usr/bin/env bash -lc 'source ~/.nvm/nvm.sh && nvm use && npm run run-job' >> scraper.log 2>&1
 ```
 
 ---

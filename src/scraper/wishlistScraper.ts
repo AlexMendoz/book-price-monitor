@@ -407,13 +407,29 @@ export type WishlistScrapeResult = {
   books: WishlistBookRaw[];
 };
 
-export async function scrapeWishlist(url: string): Promise<WishlistBookRaw[]> {
-  const userDataDir = path.resolve('./playwright-user-data');
+export type ScrapeWishlistOptions = {
+  headless?: boolean;
+  allowManualVerification?: boolean;
+  userDataDir?: string;
+  waitAfterLoadMs?: number;
+};
 
-  const context = await chromium.launchPersistentContext(userDataDir, {
-    headless: false,
+export async function scrapeWishlist(
+  url: string,
+  options: ScrapeWishlistOptions = {}
+): Promise<WishlistBookRaw[]> {
+  const {
+    headless = false,
+    allowManualVerification = true,
+    userDataDir = './playwright-user-data',
+    waitAfterLoadMs = 3000,
+  } = options;
+  const resolvedUserDataDir = path.resolve(userDataDir);
+
+  const context = await chromium.launchPersistentContext(resolvedUserDataDir, {
+    headless,
     viewport: { width: 1400, height: 900 },
-    args: ['--start-maximized'],
+    args: headless ? [] : ['--start-maximized'],
   });
 
   const page = context.pages()[0] || (await context.newPage());
@@ -429,6 +445,12 @@ export async function scrapeWishlist(url: string): Promise<WishlistBookRaw[]> {
     const currentTitle = await page.title();
 
     if (/human verification|verify|verificación/i.test(currentTitle)) {
+      if (!allowManualVerification) {
+        throw new Error(
+          'Se detectó una verificación humana y el scraper está en modo no interactivo.'
+        );
+      }
+
       console.log('\nSe detectó una verificación humana.');
       console.log('Resuélvela manualmente en la ventana del navegador.');
       console.log('Cuando termines y veas la wishlist cargada, presiona ENTER aquí.\n');
@@ -439,7 +461,7 @@ export async function scrapeWishlist(url: string): Promise<WishlistBookRaw[]> {
       console.log('No se alcanzó networkidle, continúo...');
     });
 
-    await page.waitForTimeout(3000);
+    await page.waitForTimeout(waitAfterLoadMs);
 
     const items = page.locator('.producto');
     const count = await items.count();

@@ -16,27 +16,30 @@ export async function upsertWishlist(input: UpsertWishlistInput): Promise<number
 
   if (existing.length > 0) {
     const wishlist = existing[0];
+    const updatePayload = {
+      name: input.name,
+      updatedAt: new Date().toISOString(),
+      isActive: true,
+    } as any;
 
     await db
       .update(wishlists)
-      .set({
-        name: input.name,
-        updatedAt: new Date().toISOString(),
-        isActive: true,
-      })
+      .set(updatePayload)
       .where(eq(wishlists.id, wishlist.id));
 
     return wishlist.id;
   }
 
+  const insertPayload = {
+    name: input.name,
+    url: input.url,
+    updatedAt: new Date().toISOString(),
+    isActive: true,
+  } as any;
+
   const inserted = await db
     .insert(wishlists)
-    .values({
-      name: input.name,
-      url: input.url,
-      updatedAt: new Date().toISOString(),
-      isActive: true,
-    })
+    .values(insertPayload)
     .returning({ id: wishlists.id });
 
   return inserted[0].id;

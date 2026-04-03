@@ -32,6 +32,29 @@ type SnapshotRow = {
   scrapedAt: string;
 };
 
+type RankedBookSource = {
+  id: number;
+  title: string;
+  author: string | null;
+  productUrl: string | null;
+  imageUrl: string | null;
+};
+
+export async function getDealRanking(): Promise<RankedBookDeal[]> {
+  const allBooks = await db
+    .select({
+      id: books.id,
+      title: books.title,
+      author: books.author,
+      productUrl: books.productUrl,
+      imageUrl: books.imageUrl,
+    })
+    .from(books)
+    .orderBy(asc(books.title));
+
+  return buildRanking(allBooks);
+}
+
 export async function getDealRankingByWishlist(wishlistId: number): Promise<RankedBookDeal[]> {
   const wishlistLinkedBooks = await db
     .select({
@@ -46,9 +69,13 @@ export async function getDealRankingByWishlist(wishlistId: number): Promise<Rank
     .where(eq(wishlistBooks.wishlistId, wishlistId))
     .orderBy(asc(books.title));
 
+  return buildRanking(wishlistLinkedBooks);
+}
+
+async function buildRanking(bookList: RankedBookSource[]): Promise<RankedBookDeal[]> {
   const ranking: RankedBookDeal[] = [];
 
-  for (const book of wishlistLinkedBooks) {
+  for (const book of bookList) {
     const snapshots = await db
       .select({
         id: priceSnapshots.id,

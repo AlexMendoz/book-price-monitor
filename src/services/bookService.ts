@@ -19,32 +19,35 @@ export async function upsertBook(input: UpsertBookInput): Promise<number> {
 
     if (existing.length > 0) {
       const book = existing[0];
+      const updatePayload = {
+        title: input.title,
+        author: input.author,
+        imageUrl: input.imageUrl,
+        updatedAt: new Date().toISOString(),
+        isActive: true,
+      } as any;
 
       await db
         .update(books)
-        .set({
-          title: input.title,
-          author: input.author,
-          imageUrl: input.imageUrl,
-          updatedAt: new Date().toISOString(),
-          isActive: true,
-        })
+        .set(updatePayload)
         .where(eq(books.id, book.id));
 
       return book.id;
     }
   }
 
+  const insertPayload = {
+    title: input.title,
+    author: input.author,
+    productUrl: input.productUrl,
+    imageUrl: input.imageUrl,
+    isActive: true,
+    updatedAt: new Date().toISOString(),
+  } as any;
+
   const inserted = await db
     .insert(books)
-    .values({
-      title: input.title,
-      author: input.author,
-      productUrl: input.productUrl,
-      imageUrl: input.imageUrl,
-      isActive: true,
-      updatedAt: new Date().toISOString(),
-    })
+    .values(insertPayload)
     .returning({ id: books.id });
 
   return inserted[0].id;

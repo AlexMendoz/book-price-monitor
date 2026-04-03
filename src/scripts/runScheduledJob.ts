@@ -10,13 +10,20 @@ import { getDealRankingByWishlist } from '../services/rankingService';
 import { sendTelegramMessage } from '../services/telegramService';
 
 async function main() {
+  const scraperOptions = {
+    headless: readBooleanEnv('SCRAPER_HEADLESS', true),
+    allowManualVerification: readBooleanEnv('SCRAPER_ALLOW_MANUAL_VERIFICATION', false),
+    userDataDir: process.env.PLAYWRIGHT_USER_DATA_DIR || './playwright-user-data-job',
+    waitAfterLoadMs: readNumberEnv('SCRAPER_WAIT_AFTER_LOAD_MS', 3000),
+  };
+
   for (const wishlist of WISHLISTS) {
     const wishlistId = await upsertWishlist({
       name: wishlist.name,
       url: wishlist.url,
     });
 
-    const books = await scrapeWishlist(wishlist.url);
+    const books = await scrapeWishlist(wishlist.url, scraperOptions);
 
     console.log(`Procesando ${books.length} libros para wishlist: ${wishlist.name}`);
 
@@ -139,6 +146,23 @@ function escapeHtml(value: string): string {
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#039;');
+}
+
+function readBooleanEnv(name: string, defaultValue: boolean): boolean {
+  const raw = process.env[name];
+
+  if (raw === undefined) {
+    return defaultValue;
+  }
+
+  return /^(1|true|yes|on)$/i.test(raw);
+}
+
+function readNumberEnv(name: string, defaultValue: number): number {
+  const raw = process.env[name];
+  const parsed = Number(raw);
+
+  return Number.isFinite(parsed) ? parsed : defaultValue;
 }
 
 main().catch((error) => {

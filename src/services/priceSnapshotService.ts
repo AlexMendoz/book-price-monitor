@@ -8,12 +8,14 @@ export async function createPriceSnapshot(input: {
   discountPercent: number | null;
   currency: string;
 }): Promise<void> {
-  await db.insert(priceSnapshots).values({
+  const insertPayload = {
     bookId: input.bookId,
     listPrice: input.listPrice,
     discountedPrice: input.discountedPrice,
     discountPercent: input.discountPercent,
     currency: input.currency,
     scrapedAt: new Date().toISOString(),
-  });
+  } as any;
+
+  await db.insert(priceSnapshots).values(insertPayload);
 }
