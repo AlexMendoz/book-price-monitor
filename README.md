@@ -134,6 +134,8 @@ Si no usas `nvm`, instala Node 20.x manualmente antes de ejecutar `npm install`.
     "rank-deals": "tsx src/scripts/rankDeals.ts",
     "rank-deals-html": "tsx src/scripts/generateDealsRankingHtml.ts",
     "send-telegram": "tsx src/scripts/sendDealsTelegram.ts",
+    "run-job-manual": "SCRAPER_HEADLESS=false SCRAPER_ALLOW_MANUAL_VERIFICATION=true tsx src/scripts/runScheduledJob.ts",
+    "run-job-headless": "SCRAPER_HEADLESS=true SCRAPER_ALLOW_MANUAL_VERIFICATION=false tsx src/scripts/runScheduledJob.ts",
     "run-job": "tsx src/scripts/runScheduledJob.ts",
     "telegram-bot": "tsx src/scripts/runTelegramBotPolling.ts"
   }
@@ -153,7 +155,13 @@ npm run dev
 ### Job programado no interactivo
 
 ```bash
-SCRAPER_HEADLESS=true SCRAPER_ALLOW_MANUAL_VERIFICATION=false npm run run-job
+npm run run-job-headless
+```
+
+### Job manual con navegador
+
+```bash
+npm run run-job-manual
 ```
 
 ### Bot de Telegram
