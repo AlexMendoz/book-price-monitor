@@ -28,6 +28,8 @@ type BookHistory = {
 
 type GenerateAllBooksChartOptions = {
   embedImages?: boolean;
+  outputFileName?: string;
+  selfContainedCharts?: boolean;
 };
 
 export async function generateAllBooksChartReport(
@@ -41,14 +43,17 @@ export async function generateAllBooksChartReport(
 
   const books = groupHistoryByBook(rows);
   const preparedBooks = options.embedImages !== false ? await embedBookImages(books) : books;
-  const html = buildHtml(preparedBooks);
+  const html = buildHtml(preparedBooks, options);
 
   const outputDir = path.resolve('./reports');
   if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir, { recursive: true });
   }
 
-  const outputPath = path.join(outputDir, 'historico_todos_los_libros.html');
+  const outputPath = path.join(
+    outputDir,
+    options.outputFileName ?? 'historico_todos_los_libros.html'
+  );
   fs.writeFileSync(outputPath, html, 'utf8');
 
   return outputPath;
@@ -183,8 +188,9 @@ function createCoverPlaceholderDataUrl(title: string): string {
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 }
 
-function buildHtml(books: BookHistory[]): string {
+function buildHtml(books: BookHistory[], options: GenerateAllBooksChartOptions): string {
   const generatedAt = new Date().toLocaleString('es-MX');
+  const useSelfContainedCharts = options.selfContainedCharts === true;
   const chartData = books.map((book) => ({
     bookId: book.bookId,
     labels: book.labels.map((label) => shortenDateForAxis(label)),
@@ -195,6 +201,12 @@ function buildHtml(books: BookHistory[]): string {
     title: book.title,
     currentDiscountPercent: book.currentDiscountPercent,
   }));
+  const chartScriptTag = useSelfContainedCharts
+    ? ''
+    : '<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>';
+  const chartRendererScript = useSelfContainedCharts
+    ? getSelfContainedChartRendererScript()
+    : getChartJsRendererScript();
 
   return `
 <!DOCTYPE html>
@@ -203,7 +215,7 @@ function buildHtml(books: BookHistory[]): string {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Histórico global de libros</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  ${chartScriptTag}
   <style>
     :root {
       --bg: #f4f1ea;
@@ -448,6 +460,32 @@ function buildHtml(books: BookHistory[]): string {
       background: #fff;
       border-top: 1px solid var(--border);
       padding-top: 18px;
+      position: relative;
+    }
+
+    .chart-tooltip {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translate(-50%, -4px);
+      max-width: min(220px, calc(100% - 24px));
+      background: rgba(45, 36, 31, 0.92);
+      color: #fffdf8;
+      border-radius: 12px;
+      padding: 8px 10px;
+      font-size: 12px;
+      line-height: 1.35;
+      box-shadow: 0 10px 24px rgba(45, 36, 31, 0.2);
+      opacity: 0;
+      transition: opacity 0.15s ease, transform 0.15s ease;
+      pointer-events: none;
+      z-index: 2;
+      text-align: center;
+    }
+
+    .chart-tooltip.visible {
+      opacity: 1;
+      transform: translate(-50%, 0);
     }
 
     canvas {
@@ -624,6 +662,7 @@ function buildHtml(books: BookHistory[]): string {
                 <span class="legend-item"><span class="legend-dot" style="background:#f59e0b"></span>Precio lista</span>
                 <span class="legend-item"><span class="legend-dot" style="background:#0f766e"></span>Precio con descuento</span>
               </div>
+              <div class="chart-tooltip" id="tooltip-book-${book.bookId}"></div>
               <canvas id="chart-book-${book.bookId}"></canvas>
             </div>
           </div>
@@ -696,6 +735,15 @@ function buildHtml(books: BookHistory[]): string {
     priceFilterSelect?.addEventListener('change', applyFilters);
     applyFilters();
 
+    ${chartRendererScript}
+  </script>
+</body>
+</html>
+  `.trim();
+}
+
+function getChartJsRendererScript(): string {
+  return `
     for (const book of books) {
       const ctx = document.getElementById(\`chart-book-\${book.bookId}\`);
       if (!ctx) continue;
@@ -784,9 +832,247 @@ function buildHtml(books: BookHistory[]): string {
         }
       });
     }
-  </script>
-</body>
-</html>
+  `.trim();
+}
+
+function getSelfContainedChartRendererScript(): string {
+  return `
+    function compactCurrency(value) {
+      return new Intl.NumberFormat('es-MX', {
+        notation: 'compact',
+        maximumFractionDigits: 1
+      }).format(value);
+    }
+
+    function getVisibleXTickIndexes(total) {
+      if (total <= 1) return [0];
+      if (window.innerWidth <= 720) {
+        return Array.from(new Set([0, Math.floor((total - 1) / 2), total - 1]));
+      }
+
+      const maxTicks = Math.min(6, total);
+      const step = Math.max(1, Math.ceil((total - 1) / (maxTicks - 1)));
+      const indexes = [];
+      for (let i = 0; i < total; i += step) indexes.push(i);
+      if (indexes[indexes.length - 1] !== total - 1) indexes.push(total - 1);
+      return indexes;
+    }
+
+    function drawDataset(ctx, points, color, activePointIndex) {
+      const visible = points.filter((point) => point !== null);
+      if (visible.length < 2) return;
+
+      ctx.beginPath();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2.5;
+
+      let started = false;
+      for (const point of points) {
+        if (!point) {
+          started = false;
+          continue;
+        }
+
+        if (!started) {
+          ctx.moveTo(point.x, point.y);
+          started = true;
+        } else {
+          ctx.lineTo(point.x, point.y);
+        }
+      }
+
+      ctx.stroke();
+
+      for (const [index, point] of points.entries()) {
+        if (!point) continue;
+
+        ctx.beginPath();
+        ctx.fillStyle = color;
+        const radius = activePointIndex === index
+          ? (window.innerWidth <= 720 ? 5 : 5.5)
+          : (window.innerWidth <= 720 ? 3.5 : 4);
+        ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.strokeStyle = '#fffdf8';
+        ctx.lineWidth = 1.5;
+        ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    }
+
+    function renderChart(canvas, labels, datasets, activeSelection) {
+      const parentWidth = canvas.parentElement?.clientWidth ?? 320;
+      const cssHeight = window.innerWidth <= 720 ? 320 : 260;
+      const dpr = window.devicePixelRatio || 1;
+
+      canvas.width = Math.floor(parentWidth * dpr);
+      canvas.height = Math.floor(cssHeight * dpr);
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, parentWidth, cssHeight);
+
+      const padding = { top: 16, right: 12, bottom: 34, left: 42 };
+      const chartWidth = parentWidth - padding.left - padding.right;
+      const chartHeight = cssHeight - padding.top - padding.bottom;
+
+      const allValues = datasets.flatMap((dataset) => dataset.data).filter((value) => typeof value === 'number');
+      if (allValues.length === 0 || chartWidth <= 0 || chartHeight <= 0) return;
+
+      const minValue = Math.min(...allValues);
+      const maxValue = Math.max(...allValues);
+      const range = Math.max(maxValue - minValue, 1);
+      const yMin = Math.max(0, minValue - range * 0.12);
+      const yMax = maxValue + range * 0.12;
+
+      ctx.font = window.innerWidth <= 720 ? '11px Arial' : '12px Arial';
+      ctx.fillStyle = '#76675d';
+      ctx.strokeStyle = 'rgba(118, 103, 93, 0.14)';
+
+      for (let i = 0; i <= 4; i += 1) {
+        const y = padding.top + (chartHeight / 4) * i;
+        const value = yMax - ((y - padding.top) / chartHeight) * (yMax - yMin);
+
+        ctx.beginPath();
+        ctx.moveTo(padding.left, y);
+        ctx.lineTo(padding.left + chartWidth, y);
+        ctx.stroke();
+
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(compactCurrency(value), padding.left - 8, y);
+      }
+
+      const tickIndexes = getVisibleXTickIndexes(labels.length);
+      for (const index of tickIndexes) {
+        const x =
+          labels.length === 1
+            ? padding.left + chartWidth / 2
+            : padding.left + (chartWidth * index) / (labels.length - 1);
+
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillText(labels[index] ?? '', x, padding.top + chartHeight + 10);
+      }
+
+      const datasetPoints = datasets.map((dataset, datasetIndex) =>
+        dataset.data.map((value, index) => {
+          if (typeof value !== 'number') return null;
+
+          const x =
+            labels.length === 1
+              ? padding.left + chartWidth / 2
+              : padding.left + (chartWidth * index) / (labels.length - 1);
+          const y = padding.top + ((yMax - value) / (yMax - yMin)) * chartHeight;
+          return { x, y, value, label: labels[index], datasetIndex, index };
+        })
+      );
+
+      drawDataset(ctx, datasetPoints[0], '#f59e0b', activeSelection?.datasetIndex === 0 ? activeSelection.index : -1);
+      drawDataset(ctx, datasetPoints[1], '#0f766e', activeSelection?.datasetIndex === 1 ? activeSelection.index : -1);
+
+      return datasetPoints;
+    }
+
+    function formatTooltipMoney(value) {
+      return new Intl.NumberFormat('es-MX', {
+        style: 'currency',
+        currency: 'MXN',
+        maximumFractionDigits: 2
+      }).format(value);
+    }
+
+    function updateTooltip(bookId, point) {
+      const tooltip = document.getElementById(\`tooltip-book-\${bookId}\`);
+      if (!tooltip) return;
+
+      if (!point) {
+        tooltip.classList.remove('visible');
+        tooltip.textContent = '';
+        return;
+      }
+
+      const label = point.datasetIndex === 0 ? 'Precio lista' : 'Precio con descuento';
+      tooltip.innerHTML = '<strong>' + label + '</strong><br />' + point.label + '<br />' + formatTooltipMoney(point.value);
+      tooltip.classList.add('visible');
+    }
+
+    function findNearestPoint(datasetPoints, x, y) {
+      let bestPoint = null;
+      let bestDistance = Infinity;
+
+      for (const dataset of datasetPoints) {
+        for (const point of dataset) {
+          if (!point) continue;
+          const distance = Math.hypot(point.x - x, point.y - y);
+          if (distance < bestDistance) {
+            bestDistance = distance;
+            bestPoint = point;
+          }
+        }
+      }
+
+      return bestDistance <= 28 ? bestPoint : null;
+    }
+
+    function renderAllCharts() {
+      for (const book of books) {
+        const canvas = document.getElementById(\`chart-book-\${book.bookId}\`);
+        if (!canvas) continue;
+
+        const activeSelection = canvas._activeSelection ?? null;
+        const datasetPoints = renderChart(
+          canvas,
+          window.innerWidth <= 720 ? book.mobileLabels : book.labels,
+          [
+            { data: book.listPrices },
+            { data: book.discountedPrices }
+          ],
+          activeSelection
+        );
+
+        if (!canvas.dataset.boundTooltip) {
+          const handlePointer = (clientX, clientY) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = clientX - rect.left;
+            const y = clientY - rect.top;
+            const nearest = findNearestPoint(datasetPoints, x, y);
+            const currentSelection = canvas._activeSelection ?? null;
+            const isSamePoint =
+              nearest &&
+              currentSelection &&
+              nearest.datasetIndex === currentSelection.datasetIndex &&
+              nearest.index === currentSelection.index;
+
+            canvas._activeSelection = nearest && !isSamePoint
+              ? { datasetIndex: nearest.datasetIndex, index: nearest.index }
+              : null;
+
+            updateTooltip(book.bookId, nearest && !isSamePoint ? nearest : null);
+            renderAllCharts();
+          };
+
+          canvas.addEventListener('click', (event) => {
+            handlePointer(event.clientX, event.clientY);
+          });
+
+          canvas.addEventListener('touchstart', (event) => {
+            const touch = event.touches[0];
+            if (!touch) return;
+            handlePointer(touch.clientX, touch.clientY);
+          }, { passive: true });
+
+          canvas.dataset.boundTooltip = 'true';
+        }
+      }
+    }
+
+    renderAllCharts();
+    window.addEventListener('resize', renderAllCharts);
   `.trim();
 }
 

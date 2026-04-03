@@ -124,21 +124,25 @@ async function sendGlobalReportHtml(chatId: string | number) {
   try {
     await telegramSendMessage({
       chatId,
-      text: 'Generando el reporte global HTML, espera un momento...',
+      text: 'Generando el reporte global compartible, espera un momento...',
     });
 
-    const reportPath = await generateAllBooksChartReport({ embedImages: true });
+    const reportPath = await generateAllBooksChartReport({
+      embedImages: true,
+      selfContainedCharts: true,
+      outputFileName: 'historico_todos_los_libros_compartible.html',
+    });
 
     await telegramSendDocument({
       chatId,
       filePath: reportPath,
-      caption: 'Reporte global de libros en HTML',
+      caption: 'Reporte global compartible de libros en HTML',
     });
   } catch (error) {
     await telegramSendMessage({
       chatId,
       text:
-        'No pude generar o enviar el reporte global.\n\n' +
+        'No pude generar o enviar el reporte global compartible.\n\n' +
         escapeHtml(getErrorMessage(error)),
     });
   }
