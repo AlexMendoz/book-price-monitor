@@ -50,6 +50,7 @@ Thumbs.db
 # Playwright
 # =========================
 playwright-user-data/
+playwright-user-data-job/
 playwright-report/
 test-results/
 blob-report/
