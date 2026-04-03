@@ -171,6 +171,18 @@ Ejemplo para correr el job cada 6 horas:
 0 */6 * * * cd /ruta/a/book-price-monitor && /usr/bin/env bash -lc 'source ~/.nvm/nvm.sh && nvm use && npm run run-job' >> scraper.log 2>&1
 ```
 
+## GitHub Pages
+
+El repo incluye el workflow [deploy-pages.yml](.github/workflows/deploy-pages.yml) para publicar automaticamente la carpeta `reports/` en GitHub Pages cuando hay push a `master`.
+
+Pasos para activarlo en GitHub:
+
+1. Ve a `Settings > Pages`.
+2. En `Build and deployment`, selecciona `Source: GitHub Actions`.
+3. Haz push a `master` y espera que termine el workflow `Deploy Reports To GitHub Pages`.
+
+El sitio se publica con un `index.html` generado automaticamente por [.github/scripts/generate-reports-index.mjs](.github/scripts/generate-reports-index.mjs).
+
 ## Estado actual
 
 El nucleo scraper + base + bot por wishlist esta funcionando y alineado.
