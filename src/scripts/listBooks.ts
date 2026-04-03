@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import '../config/loadEnv';
 import { getAllBooks } from '../services/reportService';
 
 async function main() {

@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import './config/loadEnv';
 import { scrapeWishlist } from './scraper/wishlistScraper';
 import { parseDiscount, parseMoney } from './utils/money';
 import { upsertBook } from './services/bookService';
@@ -10,7 +10,7 @@ import { upsertWishlist, linkBookToWishlist } from './services/wishlistService';
 
 async function main() {
   if (WISHLISTS.length === 0) {
-    throw new Error('No hay wishlists configuradas en src/config/wishlist.ts');
+    throw new Error('No hay wishlists configuradas. Define WISHLISTS_JSON en tu .env.local');
   }
 
   for (const wishlist of WISHLISTS) {

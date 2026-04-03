@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import '../config/loadEnv';
 import { generateAllBooksChartReport } from './generateAllBooksChart';
 
 async function main() {

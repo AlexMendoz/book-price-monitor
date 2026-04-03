@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import '../config/loadEnv';
 import { getDealRanking } from '../services/rankingService';
 
 async function main() {

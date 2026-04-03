@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import '../config/loadEnv';
 import { WISHLISTS } from '../config/wishlists';
 import { scrapeWishlist } from '../scraper/wishlistScraper';
 import { parseDiscount, parseMoney } from '../utils/money';

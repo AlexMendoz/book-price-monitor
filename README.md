@@ -8,7 +8,7 @@ El proyecto scrapea una o varias wishlists de Buscalibre, guarda snapshots de pr
 
 Flujo principal:
 
-1. Lee wishlists configuradas en `src/config/wishlists.ts`.
+1. Lee wishlists configuradas desde `WISHLISTS_JSON` en `.env.local`.
 2. Extrae libros y precios con Playwright.
 3. Hace upsert de libros/listas y guarda snapshot de precios.
 4. Calcula indicadores de oferta (minimo historico, bajada vs anterior, descuento alto, posibles descuentos sospechosos).
@@ -102,12 +102,13 @@ TELEGRAM_CHAT_ID=tu_chat_id
 SCRAPER_HEADLESS=true
 SCRAPER_ALLOW_MANUAL_VERIFICATION=false
 SCRAPER_WAIT_AFTER_LOAD_MS=3000
+WISHLISTS_JSON=[{"name":"Wishlist 1","url":"https://www.buscalibre.com.mx/v2/tu_wishlist_1.html"},{"name":"Wishlist 2","url":"https://www.buscalibre.com.mx/v2/tu_wishlist_2.html"}]
 ```
 
 Notas:
 
-- `WISHLIST_URL` aparece en `.env.example`, pero el flujo actual usa `src/config/wishlists.ts`.
-- Puedes configurar multiples listas en `src/config/wishlists.ts`.
+- `WISHLISTS_JSON` debe ser un arreglo JSON valido de objetos con `name` y `url`.
+- Recomendado: guarda tus enlaces personales en `.env.local` (archivo no versionado).
 - `SCRAPER_ALLOW_MANUAL_VERIFICATION=false` evita que `run-job` espere `ENTER` cuando aparece una validacion humana.
 
 ## Scripts NPM
@@ -173,7 +174,7 @@ Ejemplo para correr el job cada 6 horas:
 
 ## GitHub Pages
 
-El repo incluye el workflow [deploy-pages.yml](.github/workflows/deploy-pages.yml) para publicar automaticamente la carpeta `reports/` en GitHub Pages cuando hay push a `master`.
+El repo incluye el workflow [`deploy-pages.yml`](.github/workflows/deploy-pages.yml) para publicar automaticamente la carpeta `reports/` en GitHub Pages cuando hay push a `master`.
 
 Pasos para activarlo en GitHub:
 
@@ -181,7 +182,7 @@ Pasos para activarlo en GitHub:
 2. En `Build and deployment`, selecciona `Source: GitHub Actions`.
 3. Haz push a `master` y espera que termine el workflow `Deploy Reports To GitHub Pages`.
 
-El sitio se publica con un `index.html` generado automaticamente por [.github/scripts/generate-reports-index.mjs](.github/scripts/generate-reports-index.mjs).
+El sitio se publica con un `index.html` generado automaticamente por [`generate-reports-index.mjs`](.github/scripts/generate-reports-index.mjs).
 
 ## Estado actual
 
