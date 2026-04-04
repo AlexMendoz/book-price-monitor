@@ -32,7 +32,19 @@ async function main() {
     .map((file) => {
       const label = escapeHtml(humanize(file));
       const href = encodeURI(file);
-      return `<li><a href="${href}">${label}</a></li>`;
+      const isGlobal =
+        file === 'historico_todos_los_libros_compartible.html' ||
+        file === 'historico_todos_los_libros.html';
+      const badge = isGlobal ? '<span class="report-badge">Global</span>' : '';
+      return `<li class="report-item">
+        <a class="report-link" href="${href}">
+          <span class="report-title">${label}</span>
+          <span class="report-meta">
+            ${badge}
+            <span class="report-open">Abrir</span>
+          </span>
+        </a>
+      </li>`;
     })
     .join('\n      ');
 
@@ -45,13 +57,26 @@ async function main() {
   <style>
     :root {
       color-scheme: light;
+      --bg: #f5f8f6;
+      --surface: #ffffff;
+      --surface-2: #f7fbf9;
+      --text: #132822;
+      --muted: #4f6b62;
+      --brand: #0f766e;
+      --brand-soft: #d6f1ec;
+      --border: #dbe8e3;
+      --shadow: 0 16px 42px rgba(9, 48, 41, 0.12);
     }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-family: 'Avenir Next', 'Montserrat', 'Segoe UI', sans-serif;
       margin: 0;
-      background: #f4f6f8;
-      color: #1f2937;
+      min-height: 100vh;
+      background:
+        radial-gradient(900px 360px at 0% -10%, #dbf4ec 0%, transparent 60%),
+        radial-gradient(900px 360px at 100% -10%, #e4f5ef 0%, transparent 60%),
+        var(--bg);
+      color: var(--text);
     }
 
     main {
@@ -61,36 +86,115 @@ async function main() {
     }
 
     .card {
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.08);
-      padding: 24px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      padding: 28px;
     }
 
     h1 {
-      margin: 0 0 8px;
-      font-size: 28px;
+      margin: 0 0 10px;
+      font-size: clamp(24px, 3vw, 34px);
+      letter-spacing: 0.2px;
     }
 
     p {
-      margin: 0 0 20px;
-      color: #4b5563;
+      margin: 0 0 22px;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .reports-count {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--muted);
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 6px 12px;
+      margin-bottom: 16px;
     }
 
     ul {
       margin: 0;
-      padding-left: 20px;
+      padding: 0;
+      list-style: none;
       display: grid;
-      gap: 10px;
+      gap: 12px;
     }
 
-    a {
-      color: #0f766e;
+    .report-link {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      border-radius: 14px;
+      color: var(--text);
       text-decoration: none;
+      transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease, background 140ms ease;
     }
 
-    a:hover {
-      text-decoration: underline;
+    .report-link:hover {
+      transform: translateY(-1px);
+      border-color: #c5dbd3;
+      box-shadow: 0 8px 18px rgba(13, 84, 73, 0.12);
+      background: #f1faf7;
+    }
+
+    .report-title {
+      font-weight: 600;
+      line-height: 1.35;
+    }
+
+    .report-meta {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .report-badge {
+      background: var(--brand-soft);
+      color: #0c5e57;
+      border: 1px solid #bde3da;
+      padding: 4px 9px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      text-transform: uppercase;
+    }
+
+    .report-open {
+      color: var(--brand);
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    @media (max-width: 640px) {
+      main {
+        margin: 22px auto;
+      }
+
+      .card {
+        padding: 18px;
+      }
+
+      .report-link {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .report-meta {
+        width: 100%;
+        justify-content: space-between;
+      }
     }
   </style>
 </head>
@@ -99,6 +203,7 @@ async function main() {
     <section class="card">
       <h1>Reportes de Book Price Monitor</h1>
       <p>Selecciona un reporte para abrirlo:</p>
+      <div class="reports-count">${htmlFiles.length} reportes disponibles</div>
       <ul>
       ${items || '<li>No hay reportes HTML disponibles todavía.</li>'}
       </ul>
