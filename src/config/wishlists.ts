@@ -14,6 +14,15 @@ function isWishlistConfig(value: unknown): value is WishlistConfig {
   return typeof entry.name === 'string' && typeof entry.url === 'string';
 }
 
+function isPlaceholderUrl(url: string): boolean {
+  const normalized = url.toLowerCase();
+  return (
+    normalized.includes('tu_wishlist') ||
+    normalized.includes('tu_wishlist_privada') ||
+    normalized.includes('example.com')
+  );
+}
+
 function parseWishlistsFromEnv(): WishlistConfig[] {
   const raw = process.env.WISHLISTS_JSON?.trim();
 
@@ -32,6 +41,22 @@ function parseWishlistsFromEnv(): WishlistConfig[] {
 
     if (wishlists.length !== parsed.length) {
       throw new Error('Cada wishlist debe tener { name: string, url: string }');
+    }
+
+    for (const wishlist of wishlists) {
+      if (wishlist.name.trim().length === 0) {
+        throw new Error('Cada wishlist debe tener un nombre no vacío');
+      }
+
+      if (!/^https?:\/\//i.test(wishlist.url)) {
+        throw new Error(`URL inválida en wishlist "${wishlist.name}"`);
+      }
+
+      if (isPlaceholderUrl(wishlist.url)) {
+        throw new Error(
+          `La wishlist "${wishlist.name}" usa un placeholder. Reemplázalo por tu URL real de Buscalibre.`
+        );
+      }
     }
 
     return wishlists;

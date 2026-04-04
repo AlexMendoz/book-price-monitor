@@ -440,9 +440,15 @@ export async function scrapeWishlist(
       timeout: 60_000,
     });
 
-    console.log('Título inicial:', await page.title());
-
     const currentTitle = await page.title();
+    console.log('Título inicial:', currentTitle);
+
+    if (/403|forbidden/i.test(currentTitle)) {
+      throw new Error(
+        `Buscalibre bloqueó el acceso a la wishlist (${currentTitle}). ` +
+          'Intenta cambiar red/IP, limpiar playwright-user-data y reintentar.'
+      );
+    }
 
     if (/human verification|verify|verificación/i.test(currentTitle)) {
       if (!allowManualVerification) {

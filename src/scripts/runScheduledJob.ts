@@ -17,6 +17,8 @@ async function main() {
     waitAfterLoadMs: readNumberEnv('SCRAPER_WAIT_AFTER_LOAD_MS', 3000),
   };
 
+  let totalBooksProcessed = 0;
+
   for (const wishlist of WISHLISTS) {
     const wishlistId = await upsertWishlist({
       name: wishlist.name,
@@ -26,6 +28,7 @@ async function main() {
     const books = await scrapeWishlist(wishlist.url, scraperOptions);
 
     console.log(`Procesando ${books.length} libros para wishlist: ${wishlist.name}`);
+    totalBooksProcessed += books.length;
 
     for (const book of books) {
       if (!book.title) continue;
@@ -47,6 +50,12 @@ async function main() {
         currency: book.currency,
       });
     }
+  }
+
+  if (totalBooksProcessed === 0) {
+    throw new Error(
+      'No se pudo extraer ningún libro de las wishlists. Revisa bloqueo/403 de Buscalibre y tu configuración.'
+    );
   }
 
   const allWishlists = await getAllWishlists();
@@ -110,7 +119,12 @@ async function main() {
     text: lines.join('\n').trim(),
   });
 
-  console.log('Job completado y notificación enviada.');
+  if (process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID) {
+    console.log('Job completado y notificación enviada.');
+    return;
+  }
+
+  console.log('Job completado. Telegram no está configurado, no se envió notificación.');
 }
 
 function formatMoney(value: number | null, currency: string): string {

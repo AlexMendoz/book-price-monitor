@@ -1,7 +1,12 @@
 import { config } from 'dotenv';
 
+// Prioridad de variables:
+// 1) Variables del shell (npm scripts / export)
+// 2) .env.local
+// 3) .env
+// dotenv no sobrescribe variables ya definidas por defecto.
+config({ path: '.env.local' });
 config({ path: '.env' });
-config({ path: '.env.local', override: true });
 
 const nodeMajor = Number(process.versions.node.split('.')[0] ?? 0);
 
