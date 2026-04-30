@@ -192,6 +192,9 @@ function buildHtml(books: BookHistory[], options: GenerateAllBooksChartOptions):
   const generatedAt = new Date().toLocaleString('es-MX');
   const useSelfContainedCharts = options.selfContainedCharts === true;
   const chartData = books.map((book) => ({
+    minDiscountedLine: book.discountedPrices.map((value) =>
+      value === null ? null : book.historicalMinDiscountedPrice
+    ),
     bookId: book.bookId,
     labels: book.labels.map((label) => shortenDateForAxis(label)),
     mobileLabels: book.labels.map((label) => shortenDateForAxis(label)),
@@ -661,6 +664,7 @@ function buildHtml(books: BookHistory[], options: GenerateAllBooksChartOptions):
               <div class="chart-legend">
                 <span class="legend-item"><span class="legend-dot" style="background:#f59e0b"></span>Precio lista</span>
                 <span class="legend-item"><span class="legend-dot" style="background:#0f766e"></span>Precio con descuento</span>
+                <span class="legend-item"><span class="legend-dot" style="background:#dc2626"></span>Precio mínimo histórico</span>
               </div>
               <div class="chart-tooltip" id="tooltip-book-${book.bookId}"></div>
               <canvas id="chart-book-${book.bookId}"></canvas>
@@ -768,6 +772,17 @@ function getChartJsRendererScript(): string {
               backgroundColor: 'rgba(15, 118, 110, 0.2)',
               tension: 0.25,
               spanGaps: true
+            },
+            {
+              label: 'Precio mínimo histórico',
+              data: book.minDiscountedLine,
+              borderColor: '#dc2626',
+              backgroundColor: 'rgba(220, 38, 38, 0.15)',
+              borderDash: [6, 6],
+              pointRadius: 0,
+              pointHoverRadius: 0,
+              tension: 0,
+              spanGaps: true
             }
           ]
         },
@@ -858,13 +873,18 @@ function getSelfContainedChartRendererScript(): string {
       return indexes;
     }
 
-    function drawDataset(ctx, points, color, activePointIndex) {
+    function drawDataset(ctx, points, color, activePointIndex, options = {}) {
       const visible = points.filter((point) => point !== null);
       if (visible.length < 2) return;
 
       ctx.beginPath();
       ctx.strokeStyle = color;
-      ctx.lineWidth = 2.5;
+      ctx.lineWidth = options.lineWidth ?? 2.5;
+      if (options.dashed) {
+        ctx.setLineDash(options.dashPattern ?? [6, 6]);
+      } else {
+        ctx.setLineDash([]);
+      }
 
       let started = false;
       for (const point of points) {
@@ -882,6 +902,11 @@ function getSelfContainedChartRendererScript(): string {
       }
 
       ctx.stroke();
+      ctx.setLineDash([]);
+
+      if (options.drawPoints === false) {
+        return;
+      }
 
       for (const [index, point] of points.entries()) {
         if (!point) continue;
@@ -974,6 +999,13 @@ function getSelfContainedChartRendererScript(): string {
 
       drawDataset(ctx, datasetPoints[0], '#f59e0b', activeSelection?.datasetIndex === 0 ? activeSelection.index : -1);
       drawDataset(ctx, datasetPoints[1], '#0f766e', activeSelection?.datasetIndex === 1 ? activeSelection.index : -1);
+      drawDataset(
+        ctx,
+        datasetPoints[2],
+        '#dc2626',
+        activeSelection?.datasetIndex === 2 ? activeSelection.index : -1,
+        { dashed: true, drawPoints: false, lineWidth: 2 }
+      );
 
       return datasetPoints;
     }
@@ -996,7 +1028,12 @@ function getSelfContainedChartRendererScript(): string {
         return;
       }
 
-      const label = point.datasetIndex === 0 ? 'Precio lista' : 'Precio con descuento';
+      const label =
+        point.datasetIndex === 0
+          ? 'Precio lista'
+          : point.datasetIndex === 1
+            ? 'Precio con descuento'
+            : 'Precio mínimo histórico';
       tooltip.innerHTML = '<strong>' + label + '</strong><br />' + point.label + '<br />' + formatTooltipMoney(point.value);
       tooltip.classList.add('visible');
     }
@@ -1030,7 +1067,8 @@ function getSelfContainedChartRendererScript(): string {
           window.innerWidth <= 720 ? book.mobileLabels : book.labels,
           [
             { data: book.listPrices },
-            { data: book.discountedPrices }
+            { data: book.discountedPrices },
+            { data: book.minDiscountedLine }
           ],
           activeSelection
         );

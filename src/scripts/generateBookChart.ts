@@ -31,6 +31,16 @@ async function main() {
   const listPrices = history.map((row) => row.listPrice);
   const discountedPrices = history.map((row) => row.discountedPrice);
   const discountPercents = history.map((row) => row.discountPercent);
+  const minDiscountedPrice = discountedPrices.reduce<number | null>(
+    (min, current) => {
+      if (current === null) return min;
+      return min === null ? current : Math.min(min, current);
+    },
+    null
+  );
+  const minDiscountedLine = discountedPrices.map((value) =>
+    value === null ? null : minDiscountedPrice
+  );
 
   const html = `
 <!DOCTYPE html>
@@ -139,6 +149,7 @@ async function main() {
     const labels = ${JSON.stringify(labels)};
     const listPrices = ${JSON.stringify(listPrices)};
     const discountedPrices = ${JSON.stringify(discountedPrices)};
+    const minDiscountedLine = ${JSON.stringify(minDiscountedLine)};
     const discountPercents = ${JSON.stringify(discountPercents)};
 
     new Chart(document.getElementById('priceChart'), {
@@ -153,6 +164,16 @@ async function main() {
           {
             label: 'Precio con descuento',
             data: discountedPrices
+          },
+          {
+            label: 'Precio mínimo histórico',
+            data: minDiscountedLine,
+            borderColor: '#dc2626',
+            borderDash: [6, 6],
+            pointRadius: 0,
+            pointHoverRadius: 0,
+            tension: 0,
+            spanGaps: true
           }
         ]
       },
