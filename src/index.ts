@@ -1,7 +1,7 @@
 import './config/loadEnv';
 import { scrapeWishlist } from './scraper/wishlistScraper';
 import { parseDiscount, parseMoney } from './utils/money';
-import { upsertBook } from './services/bookService';
+import { markBooksOutsideCurrentWishlistsInactive, upsertBook } from './services/bookService';
 import { createPriceSnapshot } from './services/priceSnapshotService';
 import { analyzeDeal } from './services/dealAnalyzer';
 
@@ -12,6 +12,8 @@ async function main() {
   if (WISHLISTS.length === 0) {
     throw new Error('No hay wishlists configuradas. Define WISHLISTS_JSON en tu .env.local');
   }
+
+  const activeBookIds = new Set<number>();
 
   for (const wishlist of WISHLISTS) {
     const wishlistId = await upsertWishlist({
@@ -32,6 +34,7 @@ async function main() {
         imageUrl: book.imageUrl,
       });
 
+      activeBookIds.add(bookId);
       await linkBookToWishlist(wishlistId, bookId);
       await analyzeDeal({
         bookId,
@@ -49,6 +52,8 @@ async function main() {
       });
     }
   }
+
+  await markBooksOutsideCurrentWishlistsInactive([...activeBookIds]);
 
   console.log('\nProceso terminado.');
 }

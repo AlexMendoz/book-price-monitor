@@ -2,7 +2,7 @@ import '../config/loadEnv';
 import { WISHLISTS } from '../config/wishlists';
 import { scrapeWishlist } from '../scraper/wishlistScraper';
 import { parseDiscount, parseMoney } from '../utils/money';
-import { upsertBook } from '../services/bookService';
+import { markBooksOutsideCurrentWishlistsInactive, upsertBook } from '../services/bookService';
 import { createPriceSnapshot } from '../services/priceSnapshotService';
 import { upsertWishlist, linkBookToWishlist } from '../services/wishlistService';
 import { getAllWishlists } from '../services/reportService';
@@ -18,6 +18,7 @@ async function main() {
   };
 
   let totalBooksProcessed = 0;
+  const activeBookIds = new Set<number>();
 
   for (const wishlist of WISHLISTS) {
     const wishlistId = await upsertWishlist({
@@ -40,6 +41,7 @@ async function main() {
         imageUrl: book.imageUrl,
       });
 
+      activeBookIds.add(bookId);
       await linkBookToWishlist(wishlistId, bookId);
 
       await createPriceSnapshot({
@@ -57,6 +59,8 @@ async function main() {
       'No se pudo extraer ningún libro de las wishlists. Revisa bloqueo/403 de Buscalibre y tu configuración.'
     );
   }
+
+  await markBooksOutsideCurrentWishlistsInactive([...activeBookIds]);
 
   const allWishlists = await getAllWishlists();
   const lines: string[] = [];

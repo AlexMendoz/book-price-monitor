@@ -1,7 +1,6 @@
 import '../config/loadEnv';
 import fs from 'node:fs';
 import path from 'node:path';
-import { pathToFileURL } from 'node:url';
 import { getAllBooksPriceHistory } from '../services/reportService';
 
 type HistoryRow = Awaited<ReturnType<typeof getAllBooksPriceHistory>>[number];
@@ -23,6 +22,7 @@ type BookHistory = {
   currentDiscountPercent: number | null;
   historicalMinDiscountedPrice: number | null;
   historicalMaxDiscountedPrice: number | null;
+  isActive: boolean;
   lastScrapedAt: string;
 };
 
@@ -90,6 +90,7 @@ function groupHistoryByBook(rows: HistoryRow[]): BookHistory[] {
         currentDiscountPercent: row.discountPercent,
         historicalMinDiscountedPrice: row.discountedPrice,
         historicalMaxDiscountedPrice: row.discountedPrice,
+        isActive: row.isActive,
         lastScrapedAt: formattedScrapedAt,
       });
       continue;
@@ -103,6 +104,7 @@ function groupHistoryByBook(rows: HistoryRow[]): BookHistory[] {
     existing.currentListPrice = row.listPrice;
     existing.currentDiscountedPrice = row.discountedPrice;
     existing.currentDiscountPercent = row.discountPercent;
+    existing.isActive = row.isActive;
     existing.lastScrapedAt = formattedScrapedAt;
 
     if (row.discountedPrice !== null) {
@@ -188,6 +190,14 @@ function createCoverPlaceholderDataUrl(title: string): string {
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 }
 
+function isCurrentHistoricalLow(book: BookHistory): boolean {
+  return (
+    book.currentDiscountedPrice !== null &&
+    book.historicalMinDiscountedPrice !== null &&
+    book.currentDiscountedPrice <= book.historicalMinDiscountedPrice
+  );
+}
+
 function buildHtml(books: BookHistory[], options: GenerateAllBooksChartOptions): string {
   const generatedAt = new Date().toLocaleString('es-MX');
   const useSelfContainedCharts = options.selfContainedCharts === true;
@@ -203,6 +213,7 @@ function buildHtml(books: BookHistory[], options: GenerateAllBooksChartOptions):
     discountPercents: book.discountPercents,
     title: book.title,
     currentDiscountPercent: book.currentDiscountPercent,
+    isHistoricalLow: isCurrentHistoricalLow(book),
   }));
   const chartScriptTag = useSelfContainedCharts
     ? ''
@@ -291,7 +302,7 @@ function buildHtml(books: BookHistory[], options: GenerateAllBooksChartOptions):
 
     .filters {
       display: grid;
-      grid-template-columns: minmax(220px, 1.6fr) minmax(220px, 1fr) minmax(220px, 1fr);
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
       gap: 12px;
       margin-top: 18px;
       padding: 16px;
@@ -322,7 +333,7 @@ function buildHtml(books: BookHistory[], options: GenerateAllBooksChartOptions):
       color: var(--text);
       background: #fffdf9;
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
-      transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
 
     .control input::placeholder {
@@ -341,17 +352,13 @@ function buildHtml(books: BookHistory[], options: GenerateAllBooksChartOptions):
       appearance: none;
       cursor: pointer;
       padding-right: 44px;
+      background-color: #fffdf9;
       background-image:
-        linear-gradient(45deg, transparent 50%, #8a4b08 50%),
-        linear-gradient(135deg, #8a4b08 50%, transparent 50%),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'%3E%3Cpath d='M1 1.5 7 7.5 13 1.5' fill='none' stroke='%238a4b08' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"),
         linear-gradient(180deg, #fffdf9 0%, #fff7eb 100%);
-      background-position:
-        calc(100% - 22px) calc(50% - 3px),
-        calc(100% - 16px) calc(50% - 3px),
-        0 0;
+      background-position: calc(100% - 18px) 50%, 0 0;
       background-size:
-        6px 6px,
-        6px 6px,
+        14px 9px,
         100% 100%;
       background-repeat: no-repeat;
     }
@@ -384,6 +391,27 @@ function buildHtml(books: BookHistory[], options: GenerateAllBooksChartOptions):
       border-radius: 22px;
       box-shadow: var(--shadow);
       overflow: hidden;
+      position: relative;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+
+    .book-card--inactive {
+      background: linear-gradient(180deg, #f8fafc 0%, #fffdf8 52%);
+      border-color: #94a3b8;
+      box-shadow: 0 14px 40px rgba(71, 85, 105, 0.16);
+    }
+
+    .book-card--historical-low {
+      background: linear-gradient(180deg, #fff7ed 0%, #fffdf8 56%);
+      border-color: #ea580c;
+      box-shadow: 0 16px 44px rgba(234, 88, 12, 0.2);
+    }
+
+    .book-card--inactive.book-card--historical-low {
+      border-color: #ea580c;
+      box-shadow:
+        0 16px 44px rgba(234, 88, 12, 0.18),
+        inset 0 0 0 2px rgba(148, 163, 184, 0.28);
     }
 
     .book-top {
@@ -425,6 +453,33 @@ function buildHtml(books: BookHistory[], options: GenerateAllBooksChartOptions):
     .book-meta a {
       color: var(--accent);
       text-decoration: none;
+    }
+
+    .status-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .status-badge {
+      border-radius: 999px;
+      padding: 5px 9px;
+      font-size: 12px;
+      font-weight: bold;
+      line-height: 1;
+    }
+
+    .status-badge--inactive {
+      background: #e2e8f0;
+      color: #334155;
+      border: 1px solid #cbd5e1;
+    }
+
+    .status-badge--historical-low {
+      background: #ffedd5;
+      color: #9a3412;
+      border: 1px solid #fdba74;
     }
 
     .stats {
@@ -589,19 +644,29 @@ function buildHtml(books: BookHistory[], options: GenerateAllBooksChartOptions):
           <input id="searchInput" type="search" placeholder="Escribe el título del libro" />
         </div>
         <div class="control">
-          <label for="sortSelect">Ordenar por</label>
+          <label for="sortSelect">Ordenar / agrupar por</label>
           <select id="sortSelect">
             <option value="title">Nombre</option>
             <option value="discount_desc">Mayor descuento actual</option>
+            <option value="wishlist_inactive">Ya no están en lista de deseos</option>
+            <option value="wishlist_active">Siguen en lista de deseos</option>
           </select>
         </div>
         <div class="control">
           <label for="priceFilterSelect">Filtrar por precio actual</label>
           <select id="priceFilterSelect">
             <option value="all">Todos</option>
+            <option value="current_min">Precio mínimo actual</option>
             <option value="500">Menor de $500</option>
             <option value="600">Menor de $600</option>
             <option value="700">Menor de $700</option>
+          </select>
+        </div>
+        <div class="control">
+          <label for="historicalLowFilterSelect">Estado de precio</label>
+          <select id="historicalLowFilterSelect">
+            <option value="all">Todos</option>
+            <option value="historical_low">Mínimo histórico de precio</option>
           </select>
         </div>
       </div>
@@ -614,10 +679,12 @@ function buildHtml(books: BookHistory[], options: GenerateAllBooksChartOptions):
     <section id="booksGrid" class="books-grid">
       ${books.map((book) => `
         <article
-          class="book-card"
+          class="book-card${book.isActive ? '' : ' book-card--inactive'}${isCurrentHistoricalLow(book) ? ' book-card--historical-low' : ''}"
           data-title="${escapeHtml(book.title.toLocaleLowerCase('es-MX'))}"
           data-discount="${book.currentDiscountPercent ?? Number.NEGATIVE_INFINITY}"
           data-price="${book.currentDiscountedPrice ?? Number.POSITIVE_INFINITY}"
+          data-active="${book.isActive ? 'true' : 'false'}"
+          data-historical-low="${isCurrentHistoricalLow(book) ? 'true' : 'false'}"
         >
           <div class="book-top">
             ${
@@ -634,6 +701,14 @@ function buildHtml(books: BookHistory[], options: GenerateAllBooksChartOptions):
                 ${
                   book.productUrl
                     ? `<a href="${escapeHtml(book.productUrl)}" target="_blank" rel="noopener noreferrer">Abrir libro</a>`
+                    : ''
+                }
+                ${
+                  !book.isActive || isCurrentHistoricalLow(book)
+                    ? `<div class="status-badges">
+                        ${!book.isActive ? '<span class="status-badge status-badge--inactive">Fuera de lista</span>' : ''}
+                        ${isCurrentHistoricalLow(book) ? '<span class="status-badge status-badge--historical-low">Mínimo histórico</span>' : ''}
+                      </div>`
                     : ''
                 }
               </div>
@@ -681,6 +756,7 @@ function buildHtml(books: BookHistory[], options: GenerateAllBooksChartOptions):
     const searchInput = document.getElementById('searchInput');
     const sortSelect = document.getElementById('sortSelect');
     const priceFilterSelect = document.getElementById('priceFilterSelect');
+    const historicalLowFilterSelect = document.getElementById('historicalLowFilterSelect');
     const resultsCount = document.getElementById('resultsCount');
 
     function normalizeText(value) {
@@ -704,20 +780,37 @@ function buildHtml(books: BookHistory[], options: GenerateAllBooksChartOptions):
       if (!booksGrid) return;
 
       const query = normalizeText(searchInput?.value ?? '');
+      const sortMode = sortSelect?.value ?? 'title';
       const priceLimit = priceFilterSelect?.value ?? 'all';
+      const historicalLowState = historicalLowFilterSelect?.value ?? 'all';
       const cards = [...booksGrid.querySelectorAll('.book-card')];
+      const currentPrices = cards
+        .map((card) => Number(card.dataset.price ?? 'Infinity'))
+        .filter((price) => Number.isFinite(price));
+      const currentMinPrice = currentPrices.length > 0 ? Math.min(...currentPrices) : null;
 
       for (const card of cards) {
         const title = normalizeText(card.dataset.title ?? '');
         const price = Number(card.dataset.price ?? 'Infinity');
         const matchesSearch = title.includes(query);
-        const matchesPrice = priceLimit === 'all' ? true : price < Number(priceLimit);
-        const matches = matchesSearch && matchesPrice;
+        const matchesPrice =
+          priceLimit === 'all'
+            ? true
+            : priceLimit === 'current_min'
+              ? currentMinPrice !== null && price === currentMinPrice
+              : price < Number(priceLimit);
+        const matchesWishlistState =
+          (sortMode !== 'wishlist_inactive' && sortMode !== 'wishlist_active') ||
+          (sortMode === 'wishlist_inactive' && card.dataset.active === 'false') ||
+          (sortMode === 'wishlist_active' && card.dataset.active === 'true');
+        const matchesHistoricalLow =
+          historicalLowState === 'all' ||
+          (historicalLowState === 'historical_low' && card.dataset.historicalLow === 'true');
+        const matches = matchesSearch && matchesPrice && matchesWishlistState && matchesHistoricalLow;
         card.style.display = matches ? '' : 'none';
       }
 
       const visibleCards = cards.filter((card) => card.style.display !== 'none');
-      const sortMode = sortSelect?.value ?? 'title';
 
       visibleCards.sort((a, b) => {
         if (sortMode === 'discount_desc') {
@@ -737,6 +830,7 @@ function buildHtml(books: BookHistory[], options: GenerateAllBooksChartOptions):
     searchInput?.addEventListener('input', applyFilters);
     sortSelect?.addEventListener('change', applyFilters);
     priceFilterSelect?.addEventListener('change', applyFilters);
+    historicalLowFilterSelect?.addEventListener('change', applyFilters);
     applyFilters();
 
     ${chartRendererScript}
@@ -1174,7 +1268,7 @@ function shortenDateForAxis(value: string): string {
   return datePart.replace(/\sde\s/gi, ' ').replace(/\s+/g, ' ').trim();
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (require.main === module) {
   main().catch((error) => {
     console.error('Error al generar el reporte global:', error);
     process.exit(1);

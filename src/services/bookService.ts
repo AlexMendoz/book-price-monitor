@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { eq, lte, notInArray, or } from 'drizzle-orm';
 import { db } from '../db/client';
 import { books } from '../db/schema';
 
@@ -51,4 +51,28 @@ export async function upsertBook(input: UpsertBookInput): Promise<number> {
     .returning({ id: books.id });
 
   return inserted[0].id;
+}
+
+export async function markBooksOutsideCurrentWishlistsInactive(activeBookIds: number[]): Promise<void> {
+  const uniqueActiveBookIds = [...new Set(activeBookIds)];
+  const staleCutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const updatePayload = {
+    isActive: false,
+    updatedAt: new Date().toISOString(),
+  } as any;
+
+  const staleBooksCondition = lte(books.updatedAt, staleCutoff);
+
+  if (uniqueActiveBookIds.length === 0) {
+    await db
+      .update(books)
+      .set(updatePayload)
+      .where(staleBooksCondition);
+    return;
+  }
+
+  await db
+    .update(books)
+    .set(updatePayload)
+    .where(or(notInArray(books.id, uniqueActiveBookIds), staleBooksCondition));
 }

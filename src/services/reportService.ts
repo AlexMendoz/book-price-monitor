@@ -44,6 +44,7 @@ export async function getAllBooksPriceHistory() {
       author: books.author,
       productUrl: books.productUrl,
       imageUrl: books.imageUrl,
+      isActive: books.isActive,
       currency: priceSnapshots.currency,
       listPrice: priceSnapshots.listPrice,
       discountedPrice: priceSnapshots.discountedPrice,
