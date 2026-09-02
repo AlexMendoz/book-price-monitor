@@ -5,7 +5,7 @@ import { getAllBooksPriceHistory } from '../services/reportService';
 
 type HistoryRow = Awaited<ReturnType<typeof getAllBooksPriceHistory>>[number];
 
-type BookHistory = {
+export type BookHistory = {
   bookId: number;
   title: string;
   author: string | null;
@@ -198,7 +198,7 @@ function isCurrentHistoricalLow(book: BookHistory): boolean {
   );
 }
 
-function buildHtml(books: BookHistory[], options: GenerateAllBooksChartOptions): string {
+export function buildHtml(books: BookHistory[], options: GenerateAllBooksChartOptions): string {
   const generatedAt = new Date().toLocaleString('es-MX');
   const useSelfContainedCharts = options.selfContainedCharts === true;
   const chartData = books.map((book) => ({

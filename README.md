@@ -121,6 +121,7 @@ Notas:
   "list-books": "tsx src/scripts/listBooks.ts",
   "chart": "tsx src/scripts/generateBookChart.ts",
   "chart-all": "tsx src/scripts/generateAllBooksChart.ts",
+  "merge-chart-all": "tsx src/scripts/mergeGlobalReport.ts",
   "chart-all-shareable": "tsx src/scripts/generateShareableAllBooksChart.ts",
   "rank-deals": "tsx src/scripts/rankDeals.ts",
   "rank-deals-html": "tsx src/scripts/generateDealsRankingHtml.ts",
@@ -138,6 +139,7 @@ Uso recomendado:
 - `npm run run-job-manual`: scrapeo con navegador para resolver validaciones manuales.
 - `npm run telegram-bot`: bot interactivo (`/start`, `/listas`, `/ofertas`, `/reporte_global`).
 - `npm run chart -- <bookId>`: generar HTML con historial de un libro.
+- `npm run merge-chart-all`: respalda el reporte global actual y le agrega el último snapshot local de cada libro, conservando el historial ya embebido en el HTML. Puedes indicar un reporte base: `npm run merge-chart-all -- reports/archivo.html`.
 
 ## Bot de Telegram
 
