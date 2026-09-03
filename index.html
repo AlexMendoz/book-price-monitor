@@ -125,6 +125,155 @@
       color: #ffc857;
     }
 
+    .birthday-modal[hidden] {
+      display: none;
+    }
+
+    .birthday-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      background: rgba(19, 40, 34, 0.48);
+      backdrop-filter: blur(5px);
+    }
+
+    .birthday-modal__panel {
+      width: min(100%, 420px);
+      padding: 24px;
+      border: 1px solid rgba(255, 200, 87, 0.42);
+      border-radius: 22px;
+      color: #fff0e8;
+      background:
+        radial-gradient(circle at 20% 8%, rgba(255, 200, 87, 0.24), transparent 34%),
+        linear-gradient(135deg, #280711 0%, #7b001b 56%, #c9143b 100%);
+      box-shadow: 0 24px 58px rgba(40, 7, 17, 0.36);
+    }
+
+    .birthday-modal__panel h2 {
+      margin: 0 0 8px;
+      font-size: 24px;
+    }
+
+    .birthday-modal__text {
+      display: grid;
+      min-height: 88px;
+      align-items: center;
+    }
+
+    .birthday-modal__question,
+    .birthday-modal__replacement,
+    .birthday-modal__final {
+      grid-area: 1 / 1;
+      transition: opacity 360ms ease, transform 360ms ease;
+    }
+
+    .birthday-modal__replacement,
+    .birthday-modal__final,
+    .birthday-modal.is-complete .birthday-modal__question,
+    .birthday-modal.is-complete .birthday-modal__replacement {
+      opacity: 0;
+      transform: translateY(8px);
+      pointer-events: none;
+    }
+
+    .birthday-modal.is-complete .birthday-modal__final {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .birthday-modal__panel p {
+      color: #ffe0d3;
+      margin-bottom: 16px;
+    }
+
+    .birthday-modal__progress {
+      overflow: hidden;
+      width: 100%;
+      height: 18px;
+      border: 1px solid rgba(255, 240, 232, 0.5);
+      border-radius: 999px;
+      background: rgba(255, 240, 232, 0.2);
+      box-shadow: inset 0 2px 8px rgba(40, 7, 17, 0.28);
+    }
+
+    .birthday-modal__progress-bar {
+      width: 0%;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #ffc857, #ff7a8f, #fff0e8);
+      transition: width 220ms ease;
+    }
+
+    .birthday-modal__progress-value {
+      display: none;
+      margin: 8px 0 0;
+      color: #ffc857;
+      font-size: 13px;
+      font-weight: 800;
+      text-align: right;
+    }
+
+    .birthday-modal__actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .birthday-modal__actions button {
+      border: 0;
+      border-radius: 16px;
+      padding: 12px 14px;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 900;
+      transition: transform 140ms ease, box-shadow 140ms ease, opacity 180ms ease;
+    }
+
+    .birthday-modal__actions button:hover {
+      transform: translateY(-1px);
+    }
+
+    .birthday-modal__yes {
+      color: #280711;
+      background: #ffc857;
+      box-shadow: 0 12px 24px rgba(255, 200, 87, 0.25);
+    }
+
+    .birthday-modal__no {
+      position: relative;
+      overflow: hidden;
+      color: #fff0e8;
+      background: rgba(255, 240, 232, 0.18);
+    }
+
+    .birthday-modal__no span {
+      display: inline-block;
+      transition: opacity 760ms ease, transform 760ms ease, filter 760ms ease;
+    }
+
+    .birthday-modal__no-new {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: inherit;
+      opacity: 0;
+      filter: blur(8px);
+      transform: translateY(16px) scale(0.92);
+    }
+
+    .birthday-modal.is-complete .birthday-modal__actions {
+      pointer-events: none;
+    }
+
+    .birthday-modal.is-complete .birthday-modal__actions button {
+      opacity: 0.45;
+    }
+
     .report-title {
       font-weight: 600;
       line-height: 1.35;
@@ -258,5 +407,103 @@
       </ul>
     </section>
   </main>
+  <div class="birthday-modal" id="birthday-modal" hidden>
+    <section class="birthday-modal__panel" aria-labelledby="birthday-title">
+      <h2 id="birthday-title">Antes de entrar</h2>
+      <div class="birthday-modal__text" aria-live="polite">
+        <p class="birthday-modal__question">Esto solo está disponible para mi novia la más preciosa, ¿eres mi novia la más preciosa, guapa, inteligente y maravillosa? 🤔</p>
+        <p class="birthday-modal__replacement"></p>
+        <p class="birthday-modal__final">Claro que tú eres mi novia, mi niña, mi reina, mi cielo, la más preciosa ❤️</p>
+      </div>
+      <div class="birthday-modal__progress" aria-label="Progreso para abrir la sorpresa">
+        <div class="birthday-modal__progress-bar" id="birthday-progress-bar"></div>
+      </div>
+      <div class="birthday-modal__progress-value" id="birthday-progress-value">0%</div>
+      <div class="birthday-modal__actions">
+        <button class="birthday-modal__yes" type="button" id="birthday-yes">Sí, sí soy ❤️</button>
+        <button class="birthday-modal__no" type="button" id="birthday-no">
+          <span class="birthday-modal__no-original">No, no soy 💔</span>
+          <span class="birthday-modal__no-new">Obvio que sí soy ❤️</span>
+        </button>
+      </div>
+    </section>
+  </div>
+  <script>
+    (() => {
+      const roseLink = document.querySelector('.report-link--roses');
+      const modal = document.getElementById('birthday-modal');
+      const progressBar = document.getElementById('birthday-progress-bar');
+      const progressValue = document.getElementById('birthday-progress-value');
+      const yesButton = document.getElementById('birthday-yes');
+      const noButton = document.getElementById('birthday-no');
+      const noOriginalText = noButton?.querySelector('.birthday-modal__no-original');
+      const noNewText = noButton?.querySelector('.birthday-modal__no-new');
+      let targetHref = '';
+      let progress = 0;
+      let isComplete = false;
+      let noClicks = 0;
+
+      if (!roseLink || !modal || !progressBar || !progressValue || !yesButton || !noButton || !noOriginalText || !noNewText) return;
+
+      const updateProgress = () => {
+        const roundedProgress = Math.min(100, Math.round(progress * 10) / 10);
+        progressBar.style.width = roundedProgress + '%';
+        progressValue.textContent = roundedProgress + '%';
+      };
+
+      const complete = () => {
+        if (isComplete) return;
+        isComplete = true;
+        progress = 100;
+        updateProgress();
+        modal.classList.add('is-complete');
+        setTimeout(() => {
+          window.location.href = targetHref;
+        }, 3200);
+      };
+
+      const advance = (amount) => {
+        if (isComplete) return;
+        progress = Math.min(100, progress + amount);
+        updateProgress();
+        if (progress >= 100) complete();
+      };
+
+      const updateNoButtonText = () => {
+        const originalOpacity = Math.max(0, 1 - noClicks * 0.22);
+        const newOpacity = noClicks < 3 ? 0 : Math.min(1, (noClicks - 2) * 0.28);
+        noOriginalText.style.opacity = String(originalOpacity);
+        noOriginalText.style.filter = 'blur(' + (noClicks * 1.6) + 'px)';
+        noOriginalText.style.transform = 'translateY(' + (-noClicks * 3) + 'px) scale(' + Math.max(0.88, 1 - noClicks * 0.02) + ')';
+        noNewText.style.opacity = String(newOpacity);
+        noNewText.style.filter = 'blur(' + Math.max(0, 8 - noClicks * 1.6) + 'px)';
+        noNewText.style.transform = 'translateY(' + Math.max(0, 16 - noClicks * 3) + 'px) scale(' + Math.min(1, 0.92 + noClicks * 0.02) + ')';
+      };
+
+      roseLink.addEventListener('click', (event) => {
+        event.preventDefault();
+        targetHref = roseLink.href;
+        progress = 0;
+        isComplete = false;
+        noClicks = 0;
+        modal.classList.remove('is-complete');
+        updateNoButtonText();
+        updateProgress();
+        modal.hidden = false;
+        yesButton.focus();
+      });
+
+      modal.addEventListener('click', (event) => {
+        if (event.target === modal && !isComplete) modal.hidden = true;
+      });
+
+      yesButton.addEventListener('click', () => advance(10));
+      noButton.addEventListener('click', () => {
+        noClicks += 1;
+        updateNoButtonText();
+        advance(noClicks >= 3 ? 10 : 4);
+      });
+    })();
+  </script>
 </body>
 </html>
