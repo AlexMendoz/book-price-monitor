@@ -97,6 +97,33 @@
       background: #f1faf7;
     }
 
+    .report-link--roses {
+      color: #fff0e8;
+      border-color: #c9143b;
+      background:
+        radial-gradient(circle at 18% 20%, rgba(255, 79, 104, 0.34), transparent 34%),
+        linear-gradient(135deg, #280711 0%, #7b001b 54%, #c9143b 100%);
+      box-shadow: 0 14px 32px rgba(123, 0, 27, 0.28);
+    }
+
+    .report-link--roses:hover {
+      border-color: #ff4f68;
+      background:
+        radial-gradient(circle at 18% 20%, rgba(255, 200, 87, 0.26), transparent 34%),
+        linear-gradient(135deg, #280711 0%, #8f0627 50%, #ff4f68 100%);
+      box-shadow: 0 16px 34px rgba(201, 20, 59, 0.34);
+    }
+
+    .report-link--roses .report-badge {
+      color: #280711;
+      background: #ffc857;
+      border-color: rgba(255, 240, 232, 0.55);
+    }
+
+    .report-link--roses .report-open {
+      color: #ffc857;
+    }
+
     .report-title {
       font-weight: 600;
       line-height: 1.35;
@@ -153,8 +180,17 @@
     <section class="card">
       <h1>Reportes de Book Price Monitor</h1>
       <p>Selecciona un reporte para abrirlo:</p>
-      <div class="reports-count">7 reportes disponibles</div>
+      <div class="reports-count">8 reportes disponibles</div>
       <ul>
+      <li class="report-item">
+        <a class="report-link report-link--roses" href="rosas_rojas/index.html">
+          <span class="report-title">¡Feliz cumpleaños!</span>
+          <span class="report-meta">
+            <span class="report-badge">Sorpresa</span>
+            <span class="report-open">Abrir</span>
+          </span>
+        </a>
+      </li>
       <li class="report-item">
         <a class="report-link" href="historico_todos_los_libros_compartible.html">
           <span class="report-title">historico todos los libros compartible</span>

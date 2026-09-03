@@ -1,77 +1,7 @@
-import { promises as fs } from 'node:fs';
-import path from 'node:path';
-
-const reportsDir = path.resolve(process.cwd(), 'reports');
-const rootIndexPath = path.resolve(process.cwd(), 'index.html');
-
-function humanize(fileName) {
-  return fileName
-    .replace(/\.html$/i, '')
-    .replaceAll('_', ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-function escapeHtml(value) {
-  return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#039;');
-}
-
-async function main() {
-  const entries = await fs.readdir(reportsDir, { withFileTypes: true });
-  const specialItems = [
-    {
-      label: '¡Feliz cumpleaños!',
-      href: 'rosas_rojas/index.html',
-      badge: 'Sorpresa',
-      className: 'report-link--roses',
-    },
-  ];
-  const htmlFiles = entries
-    .filter((entry) => entry.isFile() && entry.name.toLowerCase().endsWith('.html'))
-    .map((entry) => entry.name)
-    .filter((file) => file.toLowerCase() !== 'index.html')
-    .sort((a, b) => a.localeCompare(b, 'es'));
-
-  const reportItems = htmlFiles
-    .map((file) => {
-      const label = escapeHtml(humanize(file));
-      const href = encodeURI(file);
-      const isGlobal =
-        file === 'historico_todos_los_libros_compartible.html' ||
-        file === 'historico_todos_los_libros.html';
-      const badge = isGlobal ? '<span class="report-badge">Global</span>' : '';
-      return `<li class="report-item">
-        <a class="report-link" href="${href}">
-          <span class="report-title">${label}</span>
-          <span class="report-meta">
-            ${badge}
-            <span class="report-open">Abrir</span>
-          </span>
-        </a>
-      </li>`;
-    })
-    .join('\n      ');
-  const specialReportItems = specialItems
-    .map((item) => `<li class="report-item">
-        <a class="report-link ${escapeHtml(item.className)}" href="${encodeURI(item.href)}">
-          <span class="report-title">${escapeHtml(item.label)}</span>
-          <span class="report-meta">
-            <span class="report-badge">${escapeHtml(item.badge)}</span>
-            <span class="report-open">Abrir</span>
-          </span>
-        </a>
-      </li>`)
-    .join('\n      ');
-  const items = [specialReportItems, reportItems].filter(Boolean).join('\n      ');
-
-  const html = `<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
+  <base href="reports/" />
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Book Price Monitor - Reportes</title>
@@ -251,24 +181,82 @@ async function main() {
     <section class="card">
       <h1>Reportes de Book Price Monitor</h1>
       <p>Selecciona un reporte para abrirlo:</p>
-      <div class="reports-count">${htmlFiles.length + specialItems.length} reportes disponibles</div>
+      <div class="reports-count">8 reportes disponibles</div>
       <ul>
-      ${items || '<li>No hay reportes HTML disponibles todavía.</li>'}
+      <li class="report-item">
+        <a class="report-link report-link--roses" href="rosas_rojas/index.html">
+          <span class="report-title">¡Feliz cumpleaños!</span>
+          <span class="report-meta">
+            <span class="report-badge">Sorpresa</span>
+            <span class="report-open">Abrir</span>
+          </span>
+        </a>
+      </li>
+      <li class="report-item">
+        <a class="report-link" href="historico_todos_los_libros_compartible.html">
+          <span class="report-title">historico todos los libros compartible</span>
+          <span class="report-meta">
+            <span class="report-badge">Global</span>
+            <span class="report-open">Abrir</span>
+          </span>
+        </a>
+      </li>
+      <li class="report-item">
+        <a class="report-link" href="historico_todos_los_libros.html">
+          <span class="report-title">historico todos los libros</span>
+          <span class="report-meta">
+            <span class="report-badge">Global</span>
+            <span class="report-open">Abrir</span>
+          </span>
+        </a>
+      </li>
+      <li class="report-item">
+        <a class="report-link" href="La_diosa_de_la_ilusion_edicion_especial_con_cantos_tintados_Las_Islas_Verran_Lib.html">
+          <span class="report-title">La diosa de la ilusion edicion especial con cantos tintados Las Islas Verran Lib</span>
+          <span class="report-meta">
+            
+            <span class="report-open">Abrir</span>
+          </span>
+        </a>
+      </li>
+      <li class="report-item">
+        <a class="report-link" href="La_Torre_Avalon_en_Castellano.html">
+          <span class="report-title">La Torre Avalon en Castellano</span>
+          <span class="report-meta">
+            
+            <span class="report-open">Abrir</span>
+          </span>
+        </a>
+      </li>
+      <li class="report-item">
+        <a class="report-link" href="No_te_creas_todo_lo_que_piensas.html">
+          <span class="report-title">No te creas todo lo que piensas</span>
+          <span class="report-meta">
+            
+            <span class="report-open">Abrir</span>
+          </span>
+        </a>
+      </li>
+      <li class="report-item">
+        <a class="report-link" href="ranking_ofertas.html">
+          <span class="report-title">ranking ofertas</span>
+          <span class="report-meta">
+            
+            <span class="report-open">Abrir</span>
+          </span>
+        </a>
+      </li>
+      <li class="report-item">
+        <a class="report-link" href="Sangre_de_dragon_Academia_Bloodwing_1_Edicion_limitada_con_cantos_tintados.html">
+          <span class="report-title">Sangre de dragon Academia Bloodwing 1 Edicion limitada con cantos tintados</span>
+          <span class="report-meta">
+            
+            <span class="report-open">Abrir</span>
+          </span>
+        </a>
+      </li>
       </ul>
     </section>
   </main>
 </body>
 </html>
-`;
-
-  const rootHtml = html.replace('<head>\n', '<head>\n  <base href="reports/" />\n');
-
-  await fs.writeFile(path.join(reportsDir, 'index.html'), html, 'utf8');
-  await fs.writeFile(rootIndexPath, rootHtml, 'utf8');
-  console.log(`index.html generado con ${htmlFiles.length} reportes.`);
-}
-
-main().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});

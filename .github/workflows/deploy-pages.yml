@@ -31,6 +31,9 @@ jobs:
       - name: Generate index.html for reports
         run: node .github/scripts/generate-reports-index.mjs
 
+      - name: Copy roses page
+        run: cp -R rosas_rojas reports/
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v4
         with:

@@ -1,0 +1,253 @@
+:root {
+  color-scheme: dark;
+  --night: #0d0306;
+  --wine: #280711;
+  --rose-deep: #7b001b;
+  --rose: #c9143b;
+  --rose-light: #ff4f68;
+  --leaf: #28734b;
+  --leaf-light: #45a46f;
+  --stem: #347653;
+  --gold: #ffc857;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  min-height: 100svh;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(134, 12, 43, 0.2), transparent 34%),
+    radial-gradient(circle at 50% 100%, var(--wine), transparent 55%),
+    var(--night);
+}
+
+.container {
+  display: grid;
+  position: relative;
+  width: min(94vw, 760px);
+  min-height: 100svh;
+  margin: 0 auto;
+  place-items: center;
+}
+
+.particles {
+  position: fixed;
+  z-index: 2;
+  inset: 0;
+  overflow: hidden;
+  clip-path: inset(100% 0 0 0);
+  pointer-events: none;
+  will-change: clip-path;
+}
+
+.particle {
+  position: absolute;
+  left: var(--left);
+  top: var(--top);
+  width: var(--size);
+  height: var(--size);
+  border-radius: 50%;
+  opacity: 0;
+  background: var(--color);
+  box-shadow: 0 0 calc(var(--size) * 2.5) var(--color);
+  animation: particle-float var(--duration) ease-in-out var(--delay) infinite;
+}
+
+.dedication {
+  position: absolute;
+  z-index: 3;
+  top: 48%;
+  left: 50%;
+  width: min(68vw, 350px);
+  visibility: hidden;
+  color: #fff0e8;
+  font-family: 'Great Vibes', 'Brush Script MT', cursive;
+  text-align: center;
+  text-shadow: 0 2px 14px rgba(201, 20, 59, 0.65);
+  transform: translate(-50%, -50%);
+}
+
+.dedication p {
+  margin: 0.35em 0;
+  font-size: clamp(1.8rem, 4.8vw, 3rem);
+}
+
+.dedication time {
+  display: block;
+  margin: 0.75em 0;
+  color: var(--rose-light);
+  font-size: clamp(1.25rem, 3vw, 1.75rem);
+  letter-spacing: 0.05em;
+}
+
+.heart {
+  display: inline-block;
+  color: var(--rose-light);
+  animation: heartbeat 1.35s ease-in-out infinite;
+  filter: drop-shadow(0 0 8px rgba(255, 79, 104, 0.8));
+}
+
+.signature {
+  position: absolute;
+  z-index: 3;
+  bottom: 15%;
+  left: 50%;
+  width: max-content;
+  margin: 0;
+  visibility: hidden;
+  color: #fff0e8;
+  font-family: 'Great Vibes', 'Brush Script MT', cursive;
+  font-size: clamp(1rem, 2.4vw, 1.45rem);
+  text-shadow: 0 2px 12px rgba(201, 20, 59, 0.75);
+  transform: translateX(-50%);
+}
+
+@keyframes heartbeat {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  18% {
+    transform: scale(1.22);
+  }
+
+  34% {
+    transform: scale(1);
+  }
+
+  48% {
+    transform: scale(1.14);
+  }
+}
+
+@keyframes particle-float {
+  0%,
+  100% {
+    opacity: 0;
+    transform: translate3d(0, 24px, 0) scale(0.25);
+  }
+
+  18% {
+    opacity: var(--opacity);
+  }
+
+  52% {
+    opacity: calc(var(--opacity) * 0.65);
+    transform: translate3d(var(--drift), -42px, 0) scale(1);
+  }
+
+  82% {
+    opacity: var(--opacity);
+  }
+
+  99% {
+    opacity: 0;
+    transform: translate3d(calc(var(--drift) * -0.45), -105px, 0) scale(0.35);
+  }
+}
+
+svg#flower-frame {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: min(94svh, 760px);
+  overflow: visible;
+  filter: drop-shadow(0 18px 22px rgba(0, 0, 0, 0.42));
+}
+
+/* Las formas originales se conservan; esta paleta las convierte en rosas rojas. */
+#flower-frame .st1 {
+  stroke: #315f49;
+}
+
+#flower-frame .st2,
+#flower-frame .st11 {
+  fill: var(--leaf-light);
+}
+
+#flower-frame .st3,
+#flower-frame .st4,
+#flower-frame .st7 {
+  stroke: var(--stem);
+}
+
+#flower-frame .st5 {
+  fill: var(--rose);
+}
+
+#flower-frame .st6,
+#flower-frame .st10 {
+  fill: var(--leaf);
+}
+
+#flower-frame .st8 {
+  fill: var(--rose-deep);
+}
+
+#flower-frame .st9 {
+  fill: var(--gold);
+}
+
+#flower-frame [id^="PinkFlowerGroup"] {
+  filter: drop-shadow(0 5px 6px rgba(117, 0, 25, 0.4));
+}
+
+#flower-frame [id^="PinkFlowerGroup"] .st5 {
+  stroke: #ff536e;
+  stroke-width: 0.65px;
+}
+
+#flower-frame [id*="Bud"][class="st5"] {
+  fill: var(--rose);
+}
+
+@media (max-width: 600px) {
+  .container {
+    width: 100vw;
+    padding: 12px;
+  }
+
+  svg#flower-frame {
+    height: auto;
+    max-height: 94svh;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .particles {
+    display: none;
+  }
+
+  svg#flower-frame {
+    filter: none;
+  }
+
+  .heart {
+    animation: none;
+  }
+}
+
+#Footer_group_1_,
+[id^=PinkFlowerGroup],
+[id^=BaseGroup] path,
+[id^=LeafGroup] path,
+path[id^=Stroke],
+g[id^=BudGroup] g[id^=BudGroup] g[id^=Bud],
+#Bud8_1_,
+#Bud10_1_,
+#Bud23_1_,
+#Bud26_1_,
+[id^=Dots],
+[id^=Flourish] {
+  visibility: hidden;
+}
