@@ -24,12 +24,12 @@ function escapeHtml(value) {
 async function main() {
   const entries = await fs.readdir(reportsDir, { withFileTypes: true });
   const specialItems = [
-    {
-      label: '¡Feliz cumpleaños!',
-      href: 'rosas_rojas/index.html',
-      badge: 'Sorpresa',
-      className: 'report-link--roses',
-    },
+    // {
+    //   label: '¡Feliz cumpleaños!',
+    //   href: 'rosas_rojas/index.html',
+    //   badge: 'Sorpresa',
+    //   className: 'report-link--roses',
+    // },
   ];
   const htmlFiles = entries
     .filter((entry) => entry.isFile() && entry.name.toLowerCase().endsWith('.html'))
