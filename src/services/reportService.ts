@@ -1,3 +1,4 @@
+import { restorePublishedHistory } from './historyArchiveService';
 import { activeBookCondition, activeMembershipCondition } from './activity';
 import { and, asc, eq, sql } from 'drizzle-orm';
 import { db } from '../db/client';
@@ -20,6 +21,7 @@ export async function getAllBooks() {
 }
 
 export async function getBookPriceHistory(bookId: number) {
+  await restorePublishedHistory();
   return db
     .select({
       bookId: books.id,
@@ -30,6 +32,7 @@ export async function getBookPriceHistory(bookId: number) {
       discountedPrice: priceSnapshots.discountedPrice,
       discountPercent: priceSnapshots.discountPercent,
       scrapedAt: priceSnapshots.scrapedAt,
+      timePrecision: priceSnapshots.timePrecision,
     })
     .from(priceSnapshots)
     .innerJoin(books, eq(books.id, priceSnapshots.bookId))
@@ -38,6 +41,7 @@ export async function getBookPriceHistory(bookId: number) {
 }
 
 export async function getAllBooksPriceHistory() {
+  await restorePublishedHistory();
   return db
     .select({
       bookId: books.id,
@@ -51,6 +55,7 @@ export async function getAllBooksPriceHistory() {
       discountedPrice: priceSnapshots.discountedPrice,
       discountPercent: priceSnapshots.discountPercent,
       scrapedAt: priceSnapshots.scrapedAt,
+      timePrecision: priceSnapshots.timePrecision,
     })
     .from(priceSnapshots)
     .innerJoin(books, eq(books.id, priceSnapshots.bookId))

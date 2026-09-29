@@ -1,3 +1,4 @@
+import { restorePublishedHistory } from './historyArchiveService';
 import { activeBookCondition, activeMembershipCondition } from './activity';
 import { and, asc, desc, eq } from 'drizzle-orm';
 import { db } from '../db/client';
@@ -42,6 +43,7 @@ type RankedBookSource = {
 };
 
 export async function getDealRanking(): Promise<RankedBookDeal[]> {
+  await restorePublishedHistory();
   const allBooks = await db
     .select({
       id: books.id,
@@ -58,6 +60,7 @@ export async function getDealRanking(): Promise<RankedBookDeal[]> {
 }
 
 export async function getDealRankingByWishlist(wishlistId: number): Promise<RankedBookDeal[]> {
+  await restorePublishedHistory();
   const wishlistLinkedBooks = await db
     .select({
       id: books.id,

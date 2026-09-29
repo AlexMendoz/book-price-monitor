@@ -1,3 +1,4 @@
+import { reportsDirectory, writeHistoryArchive } from '../services/historyArchiveService';
 import '../config/loadEnv';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -26,7 +27,8 @@ export type BookHistory = {
   lastScrapedAt: string;
 };
 
-type GenerateAllBooksChartOptions = {
+export type GenerateAllBooksChartOptions = {
+  historyRows?: HistoryRow[];
   embedImages?: boolean;
   outputFileName?: string;
   selfContainedCharts?: boolean;
@@ -43,9 +45,9 @@ export async function generateAllBooksChartReport(
 
   const books = groupHistoryByBook(rows);
   const preparedBooks = options.embedImages !== false ? await embedBookImages(books) : books;
-  const html = buildHtml(preparedBooks, options);
+  const html = buildHtml(preparedBooks, { ...options, historyRows: rows });
 
-  const outputDir = path.resolve('./reports');
+  const outputDir = reportsDirectory();
   if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir, { recursive: true });
   }
@@ -54,7 +56,9 @@ export async function generateAllBooksChartReport(
     outputDir,
     options.outputFileName ?? 'historico_todos_los_libros.html'
   );
-  fs.writeFileSync(outputPath, html, 'utf8');
+  writeHistoryArchive(rows);
+  fs.writeFileSync(outputPath + '.tmp', html, 'utf8');
+  fs.renameSync(outputPath + '.tmp', outputPath);
 
   return outputPath;
 }
@@ -70,7 +74,9 @@ function groupHistoryByBook(rows: HistoryRow[]): BookHistory[] {
 
   for (const row of rows) {
     const existing = booksMap.get(row.bookId);
-    const formattedScrapedAt = formatCdmxDateTime(row.scrapedAt);
+    const formattedScrapedAt = row.timePrecision === 'day'
+      ? new Intl.DateTimeFormat('es-MX', { timeZone: 'America/Mexico_City', dateStyle: 'medium' }).format(new Date(row.scrapedAt))
+      : formatCdmxDateTime(row.scrapedAt);
 
     if (!existing) {
       booksMap.set(row.bookId, {
@@ -229,6 +235,7 @@ export function buildHtml(books: BookHistory[], options: GenerateAllBooksChartOp
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Histórico global de libros</title>
+  <script type="application/json" id="price-history">${JSON.stringify({ version: 1, rows: options.historyRows ?? [] }).replaceAll('<', '\\u003c')}</script>
   ${chartScriptTag}
   <style>
     :root {

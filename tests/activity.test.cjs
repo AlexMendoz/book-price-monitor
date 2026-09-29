@@ -1,3 +1,4 @@
+process.env.HISTORY_AUTO_RESTORE = 'false';
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs'), os = require('node:os'), path = require('node:path');

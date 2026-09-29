@@ -56,6 +56,7 @@ export const wishlistBooks = sqliteTable(
 
 export const priceSnapshots = sqliteTable('price_snapshots', {
   runId: text('run_id'),
+  timePrecision: text('time_precision').notNull().default('instant'),
   id: integer('id').primaryKey({ autoIncrement: true }),
   bookId: integer('book_id')
     .notNull()

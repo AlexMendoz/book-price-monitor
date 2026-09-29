@@ -1,0 +1,27 @@
+const { test } = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs'), os = require('node:os'), path = require('node:path');
+const dir=fs.mkdtempSync(path.join(os.tmpdir(),'history-'));
+process.env.DATABASE_URL=path.join(dir,'test.db');
+process.env.HISTORY_BACKUP_DIR=path.join(dir,'backups');
+process.env.REPORTS_DIR=path.join(dir,'reports');
+process.env.HISTORY_AUTO_RESTORE='false';
+const { sqlite }=require('../src/db/client.ts');
+const { importHistoryRows, readLegacyReport, parseLegacyDate }=require('../src/services/historyArchiveService.ts');
+const { generateAllBooksChartReport }=require('../src/scripts/generateAllBooksChart.ts');
+test('legacy history survives repeated imports and report regeneration with nulls and duplicates',async()=>{
+  const row={bookId:9,title:'Archive <book>',author:'A',productUrl:'https://example.com/a',imageUrl:null,isActive:false,currency:'MXN',listPrice:null,discountedPrice:100,discountPercent:null,...parseLegacyDate('6 abr 2026')};
+  assert.equal(await importHistoryRows([row,row,{...row,discountedPrice:null}]),3);
+  assert.equal(await importHistoryRows([row,row,{...row,discountedPrice:null}]),0);
+  const output=await generateAllBooksChartReport({embedImages:false,selfContainedCharts:true});
+  const restored=readLegacyReport(output);
+  assert.equal(restored.length,3);
+  assert.equal(restored[0].title,row.title);
+  assert.equal(restored[0].timePrecision,'day');
+  assert.equal(await importHistoryRows(restored),0);
+  await generateAllBooksChartReport({embedImages:false,selfContainedCharts:true});
+  assert.equal(sqlite.prepare('SELECT count(*) AS n FROM price_snapshots').get().n,3);
+  assert.equal(JSON.parse(fs.readFileSync(path.join(process.env.REPORTS_DIR,'history.json'))).rows.length,3);
+  await assert.rejects(importHistoryRows([{...row,scrapedAt:'invalid'}]),/invalido/);
+  assert.equal(sqlite.prepare('SELECT count(*) AS n FROM price_snapshots').get().n,3);
+});
