@@ -1,6 +1,7 @@
 import '../config/loadEnv';
 import { WISHLISTS } from '../config/wishlists';
 import { scrapeWishlist } from '../scraper/wishlistScraper';
+import { collectWishlists } from '../services/wishlistSyncService';
 import { parseDiscount, parseMoney } from '../utils/money';
 import { markBooksOutsideCurrentWishlistsInactive, upsertBook } from '../services/bookService';
 import { createPriceSnapshot } from '../services/priceSnapshotService';
@@ -20,13 +21,14 @@ async function main() {
   let totalBooksProcessed = 0;
   const activeBookIds = new Set<number>();
 
-  for (const wishlist of WISHLISTS) {
+  const collected = await collectWishlists(WISHLISTS, scraperOptions);
+  for (const wishlist of collected) {
     const wishlistId = await upsertWishlist({
       name: wishlist.name,
       url: wishlist.url,
     });
 
-    const books = await scrapeWishlist(wishlist.url, scraperOptions);
+    const books = wishlist.books;
 
     console.log(`Procesando ${books.length} libros para wishlist: ${wishlist.name}`);
     totalBooksProcessed += books.length;

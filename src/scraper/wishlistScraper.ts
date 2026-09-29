@@ -542,6 +542,9 @@ export async function scrapeWishlist(
       });
     }
 
+    if (count === 0 || results.length !== count) {
+      throw new Error(`Extraccion incompleta: ${results.length} de ${count} tarjetas validas. Se conserva el estado anterior.`);
+    }
     const unique = dedupeBooks(results);
 
     console.log('\nLibros detectados:', unique.length);
