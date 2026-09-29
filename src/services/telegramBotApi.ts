@@ -36,6 +36,28 @@ export async function telegramSendMessage(input: {
   text: string;
   replyMarkup?: unknown;
 }) {
+  const chunks = splitTelegramMessage(input.text);
+  let result;
+  for (let index = 0; index < chunks.length; index++) {
+    result = await sendMessageChunk({ ...input, text: chunks[index],
+      replyMarkup: index === chunks.length - 1 ? input.replyMarkup : undefined });
+  }
+  return result;
+}
+
+export function splitTelegramMessage(text: string): string[] {
+  const chunks: string[] = [];
+  let current = '';
+  for (const line of text.split('\n')) {
+    if (line.length > 3500) throw new Error('Una linea del mensaje excede el limite seguro de Telegram.');
+    if (current.length + line.length + 1 > 3500) { chunks.push(current); current = ''; }
+    current += (current ? '\n' : '') + line;
+  }
+  if (current) chunks.push(current);
+  return chunks;
+}
+
+async function sendMessageChunk(input: { chatId: string | number; text: string; replyMarkup?: unknown }) {
   const response = await fetch(`${getBaseUrl()}/sendMessage`, {
     method: 'POST',
     headers: {

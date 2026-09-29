@@ -1,3 +1,4 @@
+import { formatMoney, formatSignedMoney, formatPercent } from '../utils/format.cjs';
 import '../config/loadEnv';
 import { getDealRanking } from '../services/rankingService';
 
@@ -42,32 +43,6 @@ async function main() {
 
     console.log('');
   });
-}
-
-function formatMoney(value: number | null, currency: string): string {
-  if (value === null) return 'N/D';
-  return new Intl.NumberFormat('es-MX', {
-    style: 'currency',
-    currency,
-    maximumFractionDigits: 2,
-  }).format(value);
-}
-
-function formatSignedMoney(value: number | null, currency: string): string {
-  if (value === null) return 'N/D';
-
-  const formatted = new Intl.NumberFormat('es-MX', {
-    style: 'currency',
-    currency,
-    maximumFractionDigits: 2,
-  }).format(Math.abs(value));
-
-  return value > 0 ? `-${formatted}` : value < 0 ? `+${formatted}` : formatted;
-}
-
-function formatPercent(value: number | null): string {
-  if (value === null) return 'N/D';
-  return `${value.toFixed(2)}%`;
 }
 
 main().catch((error) => {

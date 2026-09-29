@@ -14,7 +14,7 @@ y reducir operaciones manuales. Un commit por punto; sin push automatico.
 | 05 | Snapshots duplicados por libro compartido entre listas | Resuelto: clave unica libro-ejecucion sin deduplicar registros historicos |
 | 06 | Reglas contradictorias de minimo historico | Resuelto: calculo puro comun; minimo vigente distinto de nuevo record |
 | 07 | Importacion duplicada y publicacion fragmentada | Pendiente |
-| 08 | Clientes Telegram y formateadores duplicados | Pendiente |
+| 08 | Clientes Telegram y formateadores duplicados | Resuelto: transporte, presentacion de ofertas y formateadores compartidos |
 | 09 | Dos implementaciones para vincular libros | Resuelto: un upsert atomico para vincular y reactivar |
 | 10 | Ranking consulta historiales libro por libro | Resuelto: consultas por lotes e indice; prueba cuenta consultas |
 | 11 | Portadas descargadas en cada generacion sin limite | Pendiente |

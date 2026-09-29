@@ -1,3 +1,4 @@
+import { formatMoney, formatPercent, escapeHtml, formatCdmxDateTime } from '../utils/format.cjs';
 import { isAtHistoricalLow } from '../services/dealMetrics';
 import { reportsDirectory, writeHistoryArchive } from '../services/historyArchiveService';
 import '../config/loadEnv';
@@ -1210,44 +1211,6 @@ function getSelfContainedChartRendererScript(): string {
     renderAllCharts();
     window.addEventListener('resize', renderAllCharts);
   `.trim();
-}
-
-function formatMoney(value: number | null, currency: string): string {
-  if (value === null) return 'N/D';
-
-  return new Intl.NumberFormat('es-MX', {
-    style: 'currency',
-    currency,
-    maximumFractionDigits: 2,
-  }).format(value);
-}
-
-function formatPercent(value: number | null): string {
-  if (value === null) return 'N/D';
-  return `${value.toFixed(2)}%`;
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#039;');
-}
-
-function formatCdmxDateTime(value: string): string {
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-
-  return new Intl.DateTimeFormat('es-MX', {
-    timeZone: 'America/Mexico_City',
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(date);
 }
 
 function shortenDateToDay(value: string): string {

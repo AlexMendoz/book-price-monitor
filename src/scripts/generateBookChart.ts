@@ -1,3 +1,4 @@
+import { escapeHtml, formatCdmxDateTime } from '../utils/format.cjs';
 import '../config/loadEnv';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -225,29 +226,6 @@ function sanitizeFileName(value: string): string {
     .trim()
     .replace(/\s+/g, '_')
     .slice(0, 80);
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#039;');
-}
-
-function formatCdmxDateTime(value: string): string {
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-
-  return new Intl.DateTimeFormat('es-MX', {
-    timeZone: 'America/Mexico_City',
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(date);
 }
 
 main().catch((error) => {

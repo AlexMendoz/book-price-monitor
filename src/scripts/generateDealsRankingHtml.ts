@@ -1,3 +1,4 @@
+import { formatMoney, formatSignedMoney, formatPercent, escapeHtml } from '../utils/format.cjs';
 import '../config/loadEnv';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -344,47 +345,11 @@ function buildHtml(
   `.trim();
 }
 
-function formatMoney(value: number | null, currency: string): string {
-  if (value === null) return 'N/D';
-
-  return new Intl.NumberFormat('es-MX', {
-    style: 'currency',
-    currency,
-    maximumFractionDigits: 2,
-  }).format(value);
-}
-
-function formatSignedMoney(value: number | null, currency: string): string {
-  if (value === null) return 'N/D';
-
-  const formatted = new Intl.NumberFormat('es-MX', {
-    style: 'currency',
-    currency,
-    maximumFractionDigits: 2,
-  }).format(Math.abs(value));
-
-  return value > 0 ? `-${formatted}` : value < 0 ? `+${formatted}` : formatted;
-}
-
-function formatPercent(value: number | null): string {
-  if (value === null) return 'N/D';
-  return `${value.toFixed(2)}%`;
-}
-
 function getChangeClass(value: number | null): string {
   if (value === null) return 'neutral';
   if (value > 0) return 'positive';
   if (value < 0) return 'negative';
   return 'neutral';
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#039;');
 }
 
 main().catch((error) => {

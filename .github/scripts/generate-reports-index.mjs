@@ -1,3 +1,4 @@
+import { escapeHtml } from '../../src/utils/format.cjs';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 
@@ -10,15 +11,6 @@ function humanize(fileName) {
     .replaceAll('_', ' ')
     .replace(/\s+/g, ' ')
     .trim();
-}
-
-function escapeHtml(value) {
-  return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#039;');
 }
 
 async function main() {
