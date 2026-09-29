@@ -1,4 +1,4 @@
-CREATE TABLE `books` (
+CREATE TABLE IF NOT EXISTS `books` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`title` text NOT NULL,
 	`author` text,
@@ -10,8 +10,8 @@ CREATE TABLE `books` (
 	`updated_at` text DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `books_product_url_unique` ON `books` (`product_url`);--> statement-breakpoint
-CREATE TABLE `price_snapshots` (
+CREATE UNIQUE INDEX IF NOT EXISTS `books_product_url_unique` ON `books` (`product_url`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `price_snapshots` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`book_id` integer NOT NULL,
 	`list_price` real,
@@ -22,7 +22,7 @@ CREATE TABLE `price_snapshots` (
 	FOREIGN KEY (`book_id`) REFERENCES `books`(`id`) ON UPDATE no action ON DELETE no action
 );
 --> statement-breakpoint
-CREATE TABLE `wishlist_books` (
+CREATE TABLE IF NOT EXISTS `wishlist_books` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`wishlist_id` integer NOT NULL,
 	`book_id` integer NOT NULL,
@@ -31,8 +31,8 @@ CREATE TABLE `wishlist_books` (
 	FOREIGN KEY (`book_id`) REFERENCES `books`(`id`) ON UPDATE no action ON DELETE no action
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `wishlist_books_unique` ON `wishlist_books` (`wishlist_id`,`book_id`);--> statement-breakpoint
-CREATE TABLE `wishlists` (
+CREATE UNIQUE INDEX IF NOT EXISTS `wishlist_books_unique` ON `wishlist_books` (`wishlist_id`,`book_id`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `wishlists` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`name` text NOT NULL,
 	`url` text NOT NULL,
@@ -41,4 +41,4 @@ CREATE TABLE `wishlists` (
 	`is_active` integer DEFAULT true NOT NULL
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `wishlists_url_unique` ON `wishlists` (`url`);
+CREATE UNIQUE INDEX IF NOT EXISTS `wishlists_url_unique` ON `wishlists` (`url`);

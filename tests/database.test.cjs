@@ -1,0 +1,20 @@
+const { test } = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const Database = require('better-sqlite3');
+const { drizzle } = require('drizzle-orm/better-sqlite3');
+const { migrate } = require('drizzle-orm/better-sqlite3/migrator');
+test('migrations adopt existing databases without losing history and can run twice', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'book-migrations-'));
+  const sqlite = new Database(path.join(dir, 'prices.db'));
+  sqlite.exec(fs.readFileSync('drizzle/0000_optimal_psynapse.sql', 'utf8'));
+  sqlite.exec("INSERT INTO books (title) VALUES ('Before'); INSERT INTO price_snapshots (book_id, discounted_price) VALUES (1, 123)");
+  const db = drizzle(sqlite);
+  migrate(db, { migrationsFolder: 'drizzle' });
+  migrate(db, { migrationsFolder: 'drizzle' });
+  assert.equal(sqlite.prepare('SELECT discounted_price FROM price_snapshots').get().discounted_price, 123);
+  assert.equal(sqlite.prepare('SELECT count(*) AS n FROM books').get().n, 1);
+  sqlite.close();
+});

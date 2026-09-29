@@ -18,7 +18,7 @@ y reducir operaciones manuales. Un commit por punto; sin push automatico.
 | 09 | Dos implementaciones para vincular libros | Pendiente |
 | 10 | Ranking consulta historiales libro por libro | Pendiente |
 | 11 | Portadas descargadas en cada generacion sin limite | Pendiente |
-| 12 | Esquema mantenido en bootstrap y migraciones | Pendiente |
+| 12 | Esquema mantenido en bootstrap y migraciones | Resuelto: migraciones Drizzle al iniciar y por CLI; prueba de adopcion sin perdida |
 | 13 | README desactualizado | Pendiente |
 | 14 | Filtros ambiguos o aparentemente redundantes | Pendiente |
 

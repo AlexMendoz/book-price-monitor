@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsx src/index.ts",
     "generate": "drizzle-kit generate",
-    "migrate": "drizzle-kit migrate",
+    "migrate": "tsx src/scripts/migrate.ts",
     "list-books": "tsx src/scripts/listBooks.ts",
     "chart": "tsx src/scripts/generateBookChart.ts",
     "chart-all": "tsx src/scripts/generateAllBooksChart.ts",
