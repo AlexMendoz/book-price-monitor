@@ -1,4 +1,4 @@
-import { integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import { index, integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
 
 export const wishlists = sqliteTable(
@@ -66,4 +66,4 @@ export const priceSnapshots = sqliteTable('price_snapshots', {
   discountPercent: real('discount_percent'),
   currency: text('currency').notNull().default('MXN'),
   scrapedAt: text('scraped_at').notNull().default(sql`CURRENT_TIMESTAMP`),
-}, (table) => ({ bookRunUnique: uniqueIndex('price_snapshots_book_run_unique').on(table.bookId, table.runId) }));
+}, (table) => ({ bookHistoryIndex: index('price_snapshots_book_date_idx').on(table.bookId, table.scrapedAt, table.id), bookRunUnique: uniqueIndex('price_snapshots_book_run_unique').on(table.bookId, table.runId) }));

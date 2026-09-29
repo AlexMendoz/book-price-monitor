@@ -18,3 +18,14 @@ test('one snapshot per book and run preserves a real drop across shared lists', 
   await createPriceSnapshot({...input,discountedPrice:100,runId:'third'});
   assert.equal(sqlite.prepare('SELECT count(*) AS n FROM price_snapshots').get().n,3);
 });
+test('ranking fetches histories in batches rather than per book',async()=>{
+  for(let i=0;i<20;i++) {
+    const bookId=await upsertBook({title:'Book '+i,author:null,productUrl:'url-'+i,imageUrl:null});
+    await createPriceSnapshot({bookId,listPrice:200,discountedPrice:100,discountPercent:50,currency:'MXN'});
+  }
+  const original=sqlite.prepare;
+  let queries=0;
+  sqlite.prepare=function(sql,...args){ if(/^select/i.test(sql)&&sql.includes('price_snapshots'))queries++; return original.call(this,sql,...args); };
+  try { assert.equal((await getDealRanking()).length,21); assert.equal(queries,1); }
+  finally { sqlite.prepare=original; }
+});

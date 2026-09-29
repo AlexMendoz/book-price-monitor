@@ -1,7 +1,7 @@
 import { calculateDealMetrics } from './dealMetrics';
 import { restorePublishedHistory } from './historyArchiveService';
 import { activeBookCondition, activeMembershipCondition } from './activity';
-import { and, asc, desc, eq } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray } from 'drizzle-orm';
 import { db } from '../db/client';
 import { books, priceSnapshots, wishlistBooks, wishlists } from '../db/schema';
 
@@ -83,21 +83,19 @@ export async function getDealRankingByWishlist(wishlistId: number): Promise<Rank
 async function buildRanking(bookList: RankedBookSource[]): Promise<RankedBookDeal[]> {
   const ranking: RankedBookDeal[] = [];
 
-  for (const book of bookList) {
-    const snapshots = await db
-      .select({
-        id: priceSnapshots.id,
-        bookId: priceSnapshots.bookId,
-        listPrice: priceSnapshots.listPrice,
-        discountedPrice: priceSnapshots.discountedPrice,
-        discountPercent: priceSnapshots.discountPercent,
-        currency: priceSnapshots.currency,
-        scrapedAt: priceSnapshots.scrapedAt,
-      })
-      .from(priceSnapshots)
-      .where(eq(priceSnapshots.bookId, book.id))
+  const historyByBook = new Map<number, SnapshotRow[]>();
+  for (let offset = 0; offset < bookList.length; offset += 500) {
+    const ids = bookList.slice(offset, offset + 500).map(book => book.id);
+    const rows = await db.select().from(priceSnapshots).where(inArray(priceSnapshots.bookId, ids))
       .orderBy(desc(priceSnapshots.scrapedAt), desc(priceSnapshots.id));
-
+    for (const row of rows) {
+      const history = historyByBook.get(row.bookId) ?? [];
+      history.push(row);
+      historyByBook.set(row.bookId, history);
+    }
+  }
+  for (const book of bookList) {
+    const snapshots = historyByBook.get(book.id) ?? [];
     if (snapshots.length === 0) continue;
 
     const current = snapshots[0];
