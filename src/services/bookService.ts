@@ -1,4 +1,4 @@
-import { eq, lte, notInArray, or } from 'drizzle-orm';
+import { eq, notInArray, or, sql } from 'drizzle-orm';
 import { db } from '../db/client';
 import { books } from '../db/schema';
 
@@ -24,6 +24,7 @@ export async function upsertBook(input: UpsertBookInput): Promise<number> {
         author: input.author,
         imageUrl: input.imageUrl,
         updatedAt: new Date().toISOString(),
+        lastSeenAt: new Date().toISOString(),
         isActive: true,
       } as any;
 
@@ -43,6 +44,7 @@ export async function upsertBook(input: UpsertBookInput): Promise<number> {
     imageUrl: input.imageUrl,
     isActive: true,
     updatedAt: new Date().toISOString(),
+        lastSeenAt: new Date().toISOString(),
   } as any;
 
   const inserted = await db
@@ -58,10 +60,9 @@ export async function markBooksOutsideCurrentWishlistsInactive(activeBookIds: nu
   const staleCutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
   const updatePayload = {
     isActive: false,
-    updatedAt: new Date().toISOString(),
   } as any;
 
-  const staleBooksCondition = lte(books.updatedAt, staleCutoff);
+  const staleBooksCondition = sql`julianday(${books.lastSeenAt}) <= julianday(${staleCutoff})`;
 
   if (uniqueActiveBookIds.length === 0) {
     await db

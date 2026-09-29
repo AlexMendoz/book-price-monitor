@@ -5,7 +5,7 @@ import { collectWishlists } from '../services/wishlistSyncService';
 import { parseDiscount, parseMoney } from '../utils/money';
 import { markBooksOutsideCurrentWishlistsInactive, upsertBook } from '../services/bookService';
 import { createPriceSnapshot } from '../services/priceSnapshotService';
-import { upsertWishlist, linkBookToWishlist } from '../services/wishlistService';
+import { upsertWishlist, linkBookToWishlist, reconcileWishlist, retireUnconfiguredWishlists } from '../services/wishlistService';
 import { getAllWishlists } from '../services/reportService';
 import { getDealRankingByWishlist } from '../services/rankingService';
 import { sendTelegramMessage } from '../services/telegramService';
@@ -20,6 +20,7 @@ async function main() {
 
   let totalBooksProcessed = 0;
   const activeBookIds = new Set<number>();
+  const wishlistIds: number[] = [];
 
   const collected = await collectWishlists(WISHLISTS, scraperOptions);
   for (const wishlist of collected) {
@@ -28,6 +29,8 @@ async function main() {
       url: wishlist.url,
     });
 
+    wishlistIds.push(wishlistId);
+    const wishlistBookIds: number[] = [];
     const books = wishlist.books;
 
     console.log(`Procesando ${books.length} libros para wishlist: ${wishlist.name}`);
@@ -44,6 +47,7 @@ async function main() {
       });
 
       activeBookIds.add(bookId);
+      wishlistBookIds.push(bookId);
       await linkBookToWishlist(wishlistId, bookId);
 
       await createPriceSnapshot({
@@ -54,7 +58,9 @@ async function main() {
         currency: book.currency,
       });
     }
+    await reconcileWishlist(wishlistId, wishlistBookIds);
   }
+  await retireUnconfiguredWishlists(wishlistIds);
 
   if (totalBooksProcessed === 0) {
     throw new Error(

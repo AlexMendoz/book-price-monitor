@@ -23,6 +23,7 @@ export const books = sqliteTable(
     title: text('title').notNull(),
     author: text('author'),
     wishlistItemId: text('wishlist_item_id'),
+    lastSeenAt: text('last_seen_at'),
     imageUrl: text('image_url'),
     productUrl: text('product_url'),
     isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
@@ -38,6 +39,8 @@ export const wishlistBooks = sqliteTable(
   'wishlist_books',
   {
     id: integer('id').primaryKey({ autoIncrement: true }),
+    isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+    lastSeenAt: text('last_seen_at'),
     wishlistId: integer('wishlist_id')
       .notNull()
       .references(() => wishlists.id),

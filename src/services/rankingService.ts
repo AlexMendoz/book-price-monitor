@@ -1,6 +1,7 @@
-import { asc, desc, eq } from 'drizzle-orm';
+import { activeBookCondition, activeMembershipCondition } from './activity';
+import { and, asc, desc, eq } from 'drizzle-orm';
 import { db } from '../db/client';
-import { books, priceSnapshots, wishlistBooks } from '../db/schema';
+import { books, priceSnapshots, wishlistBooks, wishlists } from '../db/schema';
 
 export type RankedBookDeal = {
   bookId: number;
@@ -50,6 +51,7 @@ export async function getDealRanking(): Promise<RankedBookDeal[]> {
       imageUrl: books.imageUrl,
     })
     .from(books)
+    .where(activeBookCondition())
     .orderBy(asc(books.title));
 
   return buildRanking(allBooks);
@@ -66,7 +68,8 @@ export async function getDealRankingByWishlist(wishlistId: number): Promise<Rank
     })
     .from(wishlistBooks)
     .innerJoin(books, eq(books.id, wishlistBooks.bookId))
-    .where(eq(wishlistBooks.wishlistId, wishlistId))
+    .innerJoin(wishlists, eq(wishlists.id, wishlistBooks.wishlistId))
+    .where(and(eq(wishlistBooks.wishlistId, wishlistId), activeMembershipCondition()))
     .orderBy(asc(books.title));
 
   return buildRanking(wishlistLinkedBooks);

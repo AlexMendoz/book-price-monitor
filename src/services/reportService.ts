@@ -1,4 +1,5 @@
-import { asc, eq } from 'drizzle-orm';
+import { activeBookCondition, activeMembershipCondition } from './activity';
+import { and, asc, eq, sql } from 'drizzle-orm';
 import { db } from '../db/client';
 import { books, priceSnapshots, wishlistBooks, wishlists } from '../db/schema';
 
@@ -44,7 +45,7 @@ export async function getAllBooksPriceHistory() {
       author: books.author,
       productUrl: books.productUrl,
       imageUrl: books.imageUrl,
-      isActive: books.isActive,
+      isActive: sql<boolean>`CASE WHEN ${activeBookCondition()} THEN 1 ELSE 0 END`.mapWith(Boolean),
       currency: priceSnapshots.currency,
       listPrice: priceSnapshots.listPrice,
       discountedPrice: priceSnapshots.discountedPrice,
@@ -64,6 +65,7 @@ export async function getAllWishlists() {
       url: wishlists.url,
     })
     .from(wishlists)
+    .where(eq(wishlists.isActive, true))
     .orderBy(asc(wishlists.name));
 }
 
@@ -77,6 +79,7 @@ export async function getWishlistBooks(wishlistId: number) {
     })
     .from(wishlistBooks)
     .innerJoin(books, eq(books.id, wishlistBooks.bookId))
-    .where(eq(wishlistBooks.wishlistId, wishlistId))
+    .innerJoin(wishlists, eq(wishlists.id, wishlistBooks.wishlistId))
+    .where(and(eq(wishlistBooks.wishlistId, wishlistId), activeMembershipCondition()))
     .orderBy(asc(books.title));
 }
