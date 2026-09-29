@@ -15,7 +15,7 @@ y reducir operaciones manuales. Un commit por punto; sin push automatico.
 | 06 | Reglas contradictorias de minimo historico | Resuelto: calculo puro comun; minimo vigente distinto de nuevo record |
 | 07 | Importacion duplicada y publicacion fragmentada | Pendiente |
 | 08 | Clientes Telegram y formateadores duplicados | Pendiente |
-| 09 | Dos implementaciones para vincular libros | Pendiente |
+| 09 | Dos implementaciones para vincular libros | Resuelto: un upsert atomico para vincular y reactivar |
 | 10 | Ranking consulta historiales libro por libro | Pendiente |
 | 11 | Portadas descargadas en cada generacion sin limite | Pendiente |
 | 12 | Esquema mantenido en bootstrap y migraciones | Resuelto: migraciones Drizzle al iniciar y por CLI; prueba de adopcion sin perdida |

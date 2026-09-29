@@ -45,24 +45,14 @@ export async function upsertWishlist(input: UpsertWishlistInput): Promise<number
   return inserted[0].id;
 }
 
-export async function linkBookToWishlist(wishlistId: number, bookId: number): Promise<void> {
-  const existing = await db
-    .select()
-    .from(wishlistBooks)
-    .where(and(eq(wishlistBooks.wishlistId, wishlistId), eq(wishlistBooks.bookId, bookId)))
-    .limit(1);
-
-  if (existing.length > 0) {
-    await db.update(wishlistBooks).set({ isActive: true, lastSeenAt: new Date().toISOString() })
-      .where(eq(wishlistBooks.id, existing[0].id));
-    return;
-  }
-
-  await db.insert(wishlistBooks).values({
-    wishlistId,
-    bookId,
-    lastSeenAt: new Date().toISOString(),
-  });
+export async function linkBookToWishlist(wishlistId: number, bookId: number): Promise<number> {
+  const lastSeenAt = new Date().toISOString();
+  const [linked] = await db.insert(wishlistBooks).values({ wishlistId, bookId, lastSeenAt })
+    .onConflictDoUpdate({
+      target: [wishlistBooks.wishlistId, wishlistBooks.bookId],
+      set: { isActive: true, lastSeenAt },
+    }).returning({ id: wishlistBooks.id });
+  return linked.id;
 }
 
 export async function reconcileWishlist(wishlistId: number, activeBookIds: number[]): Promise<void> {
