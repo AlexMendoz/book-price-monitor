@@ -1,0 +1,25 @@
+const {test}=require('node:test'),assert=require('node:assert/strict');
+const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
+const dir=fs.mkdtempSync(path.join(os.tmpdir(),'identities-'));
+process.env.DATABASE_URL=path.join(dir,'test.db');process.env.HISTORY_BACKUP_DIR=path.join(dir,'backups');process.env.HISTORY_AUTO_RESTORE='false';
+const {sqlite}=require('../src/db/client.ts');
+const {upsertBook}=require('../src/services/bookService.ts');
+const {importHistoryRows}=require('../src/services/historyArchiveService.ts');
+const {reconcileBookAliases}=require('../src/services/bookIdentity.ts');
+test('changed Buscalibre slugs use the same book and preserve all legacy observations',async()=>{
+ const old='https://www.buscalibre.com.mx/libro-amarillo/9788419621832/p/64595701';
+ const current='https://www.buscalibre.com.mx/libro-amarillo-islas-fae-2/9788419621832/p/64595701';
+ const first=await upsertBook({title:'Amarillo',author:null,productUrl:old,imageUrl:null});
+ const second=await upsertBook({title:'Amarillo (Islas Fae 2)',author:null,productUrl:current,imageUrl:null});
+ assert.equal(first,second);
+ sqlite.prepare('INSERT INTO books(title, product_url) VALUES (?, ?)').run('Alias',current);
+ const alias=sqlite.prepare('SELECT id FROM books WHERE product_url = ?').get(current).id;
+ sqlite.prepare("INSERT INTO price_snapshots(book_id, discounted_price, run_id) VALUES (?, 100, 'same'), (?, 90, 'same')").run(first,alias);
+ sqlite.transaction(reconcileBookAliases)();
+ assert.equal(sqlite.prepare('SELECT count(*) AS n FROM price_snapshots WHERE book_id = ?').get(first).n,2);
+ assert.equal(sqlite.prepare('SELECT count(*) AS n FROM books').get().n,2);
+ const row={bookId:999,title:'Alias',author:null,productUrl:current,imageUrl:null,isActive:false,currency:'MXN',listPrice:null,discountedPrice:80,discountPercent:null,scrapedAt:'2026-01-01T06:00:00.000Z',timePrecision:'day'};
+ assert.equal(await importHistoryRows([row]),1);
+ assert.equal(await importHistoryRows([row]),0);
+ assert.equal(sqlite.prepare('SELECT count(DISTINCT book_id) AS n FROM price_snapshots').get().n,1);
+});

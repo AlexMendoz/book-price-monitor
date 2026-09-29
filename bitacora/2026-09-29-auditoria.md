@@ -69,3 +69,12 @@ combinaciones de filtros, busqueda sin acentos y series de un solo punto. Tambie
 se verificaron los HTML reales y las graficas de Amarillo de oro y gloria.
 Sin errores JavaScript ni desbordamiento horizontal. Generacion offline sin
 scrapeo ni mensajes Telegram; 5,485 observaciones en ambos reportes globales.
+
+## Hallazgo adicional: URLs equivalentes
+
+La prueba visual encontro dos tarjetas de Amarillo de oro y gloria: URLs con
+slugs distintos pero el mismo `/p/64595701`. Se identifica el producto por host
+e identificador estable de Buscalibre. Las observaciones y membresias de alias
+se reasignan al libro canonico; se conservan los registros originales de libros
+como inactivos y no se elimina ningun snapshot. Regeneracion: 5,485 observaciones,
+170 productos unicos. Prueba de colision de runId y de importacion repetida incluida.

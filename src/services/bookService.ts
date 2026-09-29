@@ -1,3 +1,4 @@
+import { findBookByProductUrl } from './bookIdentity';
 import { and, eq, isNull, notInArray, or, sql } from 'drizzle-orm';
 import { db } from '../db/client';
 import { books } from '../db/schema';
@@ -11,7 +12,9 @@ type UpsertBookInput = {
 
 export async function upsertBook(input: UpsertBookInput): Promise<number> {
   {
-    const existing = await db
+    const existing = input.productUrl
+      ? [findBookByProductUrl(input.productUrl)].filter((book): book is { id: number } => Boolean(book))
+      : await db
       .select()
       .from(books)
       .where(input.productUrl ? eq(books.productUrl, input.productUrl) : and(isNull(books.productUrl), eq(books.title, input.title), input.author === null ? isNull(books.author) : eq(books.author, input.author)))

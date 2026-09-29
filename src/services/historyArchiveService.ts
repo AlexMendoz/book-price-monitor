@@ -1,3 +1,4 @@
+import { findBookByProductUrl, reconcileBookAliases } from './bookIdentity';
 import fs from 'node:fs';
 import path from 'node:path';
 import { sqlite } from '../db/client';
@@ -82,13 +83,14 @@ export async function importHistoryRows(rows: ArchiveRow[]): Promise<number> {
   fs.mkdirSync(backupDir, { recursive: true });
   await sqlite.backup(path.join(backupDir, `before-import-${Date.now()}-${Math.random().toString(16).slice(2)}.db`));
   return sqlite.transaction(() => {
+    reconcileBookAliases();
     let inserted = 0;
     const seen = new Map<string, number>();
     const createdBooks = new Set<number>();
     const histories = new Map<number, any[]>();
     for (const row of rows) {
       let book = row.productUrl
-        ? sqlite.prepare('SELECT id FROM books WHERE product_url = ?').get(row.productUrl)
+        ? findBookByProductUrl(row.productUrl)
         : sqlite.prepare('SELECT id FROM books WHERE product_url IS NULL AND title = ? AND author IS ?').get(row.title, row.author);
       if (!book) {
         const result = sqlite.prepare('INSERT INTO books(title, author, product_url, image_url, is_active, last_seen_at) VALUES (?, ?, ?, ?, ?, ?)')
