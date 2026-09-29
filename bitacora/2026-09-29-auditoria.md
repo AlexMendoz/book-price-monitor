@@ -17,7 +17,7 @@ y reducir operaciones manuales. Un commit por punto; sin push automatico.
 | 08 | Clientes Telegram y formateadores duplicados | Resuelto: transporte, presentacion de ofertas y formateadores compartidos |
 | 09 | Dos implementaciones para vincular libros | Resuelto: un upsert atomico para vincular y reactivar |
 | 10 | Ranking consulta historiales libro por libro | Resuelto: consultas por lotes e indice; prueba cuenta consultas |
-| 11 | Portadas descargadas en cada generacion sin limite | Pendiente |
+| 11 | Portadas descargadas en cada generacion sin limite | Resuelto: cache persistente, maximo cuatro descargas, timeout y recuperacion de portadas embebidas |
 | 12 | Esquema mantenido en bootstrap y migraciones | Resuelto: migraciones Drizzle al iniciar y por CLI; prueba de adopcion sin perdida |
 | 13 | README desactualizado | Pendiente |
 | 14 | Filtros ambiguos o aparentemente redundantes | Pendiente |

@@ -1,3 +1,4 @@
+import { getCachedCover, mapWithConcurrency, seedCoverCache } from '../services/coverCacheService';
 import { formatMoney, formatPercent, escapeHtml, formatCdmxDateTime } from '../utils/format.cjs';
 import { isAtHistoricalLow } from '../services/dealMetrics';
 import { reportsDirectory, writeHistoryArchive } from '../services/historyArchiveService';
@@ -46,6 +47,7 @@ export async function generateAllBooksChartReport(
   }
 
   const books = groupHistoryByBook(rows);
+  restoreEmbeddedCovers(books);
   const preparedBooks = options.embedImages !== false ? await embedBookImages(books) : books;
   const html = buildHtml(preparedBooks, { ...options, historyRows: rows });
 
@@ -131,50 +133,29 @@ function groupHistoryByBook(rows: HistoryRow[]): BookHistory[] {
   return [...booksMap.values()].sort((a, b) => a.title.localeCompare(b.title, 'es'));
 }
 
-async function embedBookImages(books: BookHistory[]): Promise<BookHistory[]> {
-  return Promise.all(
-    books.map(async (book) => {
-      if (!book.imageUrl) {
-        return book;
+function restoreEmbeddedCovers(books: BookHistory[]): void {
+  const byUrl = new Map(books.filter(book => book.productUrl).map(book => [book.productUrl!, book]));
+  const dir = reportsDirectory();
+  if (!fs.existsSync(dir)) return;
+  for (const file of fs.readdirSync(dir).filter(name => /^historico_todos_los_libros.*\.html$/.test(name))) {
+    const html = fs.readFileSync(path.join(dir, file), 'utf8');
+    for (const match of html.matchAll(/<article\b[\s\S]*?<\/article>/g)) {
+      const url = match[0].match(/<a href="([^"]+)"/)?.[1]?.replaceAll('&amp;', '&');
+      const image = match[0].match(/<img class="cover" src="([^"]+)"/)?.[1];
+      const book = url ? byUrl.get(url) : undefined;
+      if (book && image?.startsWith('data:image/') && !image.startsWith('data:image/svg')) {
+        book.reportImageSrc = image;
+        if (book.imageUrl) seedCoverCache(book.imageUrl, image);
       }
-
-      const embeddedImage = await fetchImageAsDataUrl(book.imageUrl);
-
-      return {
-        ...book,
-        reportImageSrc: embeddedImage ?? book.reportImageSrc,
-      };
-    })
-  );
+    }
+  }
 }
 
-async function fetchImageAsDataUrl(url: string): Promise<string | null> {
-  try {
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent':
-          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-        Accept: 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
-        Referer: 'https://www.buscalibre.com.mx/',
-      },
-    });
-
-    if (!response.ok) {
-      return null;
-    }
-
-    const contentType = response.headers.get('content-type') ?? '';
-    if (!contentType.startsWith('image/')) {
-      return null;
-    }
-
-    const arrayBuffer = await response.arrayBuffer();
-    const base64 = Buffer.from(arrayBuffer).toString('base64');
-
-    return `data:${contentType};base64,${base64}`;
-  } catch {
-    return null;
-  }
+async function embedBookImages(books: BookHistory[]): Promise<BookHistory[]> {
+  return mapWithConcurrency(books, async (book) => ({
+    ...book,
+    reportImageSrc: book.imageUrl ? await getCachedCover(book.imageUrl) ?? book.reportImageSrc : book.reportImageSrc,
+  }));
 }
 
 function createCoverPlaceholderDataUrl(title: string): string {
