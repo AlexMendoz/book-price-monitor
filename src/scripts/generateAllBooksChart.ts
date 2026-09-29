@@ -1,3 +1,4 @@
+import { filterAndSortBooks } from '../utils/reportFilters.cjs';
 import { getCachedCover, mapWithConcurrency, seedCoverCache } from '../services/coverCacheService';
 import { formatMoney, formatPercent, escapeHtml, formatCdmxDateTime } from '../utils/format.cjs';
 import { isAtHistoricalLow } from '../services/dealMetrics';
@@ -205,7 +206,7 @@ export function buildHtml(books: BookHistory[], options: GenerateAllBooksChartOp
     : '<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>';
   const chartRendererScript = useSelfContainedCharts
     ? getSelfContainedChartRendererScript()
-    : getChartJsRendererScript();
+    : `if (typeof Chart !== 'undefined') { ${getChartJsRendererScript()} } else { ${getSelfContainedChartRendererScript()} }`;
 
   return `
 <!DOCTYPE html>
@@ -630,29 +631,24 @@ export function buildHtml(books: BookHistory[], options: GenerateAllBooksChartOp
           <input id="searchInput" type="search" placeholder="Escribe el título del libro" />
         </div>
         <div class="control">
-          <label for="sortSelect">Ordenar / agrupar por</label>
+          <label for="sortSelect">Orden y wishlist</label>
           <select id="sortSelect">
             <option value="title">Nombre</option>
             <option value="discount_desc">Mayor descuento actual</option>
+            <option value="price_asc">Precio de menor a mayor</option>
             <option value="wishlist_inactive">Ya no están en lista de deseos</option>
             <option value="wishlist_active">Siguen en lista de deseos</option>
           </select>
         </div>
         <div class="control">
-          <label for="priceFilterSelect">Filtrar por precio actual</label>
+          <label for="priceFilterSelect">Precio</label>
           <select id="priceFilterSelect">
             <option value="all">Todos</option>
-            <option value="current_min">Precio mínimo actual</option>
+            <option value="current_min">Más barato entre los resultados</option>
+            <option value="historical_low">En su mínimo histórico</option>
             <option value="500">Menor de $500</option>
             <option value="600">Menor de $600</option>
             <option value="700">Menor de $700</option>
-          </select>
-        </div>
-        <div class="control">
-          <label for="historicalLowFilterSelect">Estado de precio</label>
-          <select id="historicalLowFilterSelect">
-            <option value="all">Todos</option>
-            <option value="historical_low">Mínimo histórico de precio</option>
           </select>
         </div>
       </div>
@@ -737,86 +733,37 @@ export function buildHtml(books: BookHistory[], options: GenerateAllBooksChartOp
   </div>
 
   <script>
-    const books = ${JSON.stringify(chartData)};
+    const books = ${JSON.stringify(chartData).replaceAll('<', '\\u003c')};
+    const filterAndSortBooks = ${filterAndSortBooks.toString()};
     const booksGrid = document.getElementById('booksGrid');
     const searchInput = document.getElementById('searchInput');
     const sortSelect = document.getElementById('sortSelect');
     const priceFilterSelect = document.getElementById('priceFilterSelect');
-    const historicalLowFilterSelect = document.getElementById('historicalLowFilterSelect');
     const resultsCount = document.getElementById('resultsCount');
-
-    function normalizeText(value) {
-      return value
-        .toLocaleLowerCase('es-MX')
-        .normalize('NFD')
-        .replace(/[\\u0300-\\u036f]/g, '');
-    }
-
-    function updateResultsCount() {
-      const visibleCards = booksGrid
-        ? [...booksGrid.querySelectorAll('.book-card')].filter((card) => card.style.display !== 'none').length
-        : 0;
-
-      if (resultsCount) {
-        resultsCount.textContent = 'Mostrando ' + visibleCards + ' libros';
-      }
-    }
 
     function applyFilters() {
       if (!booksGrid) return;
-
-      const query = normalizeText(searchInput?.value ?? '');
-      const sortMode = sortSelect?.value ?? 'title';
-      const priceLimit = priceFilterSelect?.value ?? 'all';
-      const historicalLowState = historicalLowFilterSelect?.value ?? 'all';
       const cards = [...booksGrid.querySelectorAll('.book-card')];
-      const currentPrices = cards
-        .map((card) => Number(card.dataset.price ?? 'Infinity'))
-        .filter((price) => Number.isFinite(price));
-      const currentMinPrice = currentPrices.length > 0 ? Math.min(...currentPrices) : null;
-
-      for (const card of cards) {
-        const title = normalizeText(card.dataset.title ?? '');
-        const price = Number(card.dataset.price ?? 'Infinity');
-        const matchesSearch = title.includes(query);
-        const matchesPrice =
-          priceLimit === 'all'
-            ? true
-            : priceLimit === 'current_min'
-              ? currentMinPrice !== null && price === currentMinPrice
-              : price < Number(priceLimit);
-        const matchesWishlistState =
-          (sortMode !== 'wishlist_inactive' && sortMode !== 'wishlist_active') ||
-          (sortMode === 'wishlist_inactive' && card.dataset.active === 'false') ||
-          (sortMode === 'wishlist_active' && card.dataset.active === 'true');
-        const matchesHistoricalLow =
-          historicalLowState === 'all' ||
-          (historicalLowState === 'historical_low' && card.dataset.historicalLow === 'true');
-        const matches = matchesSearch && matchesPrice && matchesWishlistState && matchesHistoricalLow;
-        card.style.display = matches ? '' : 'none';
-      }
-
-      const visibleCards = cards.filter((card) => card.style.display !== 'none');
-
-      visibleCards.sort((a, b) => {
-        if (sortMode === 'discount_desc') {
-          return Number(b.dataset.discount ?? '-Infinity') - Number(a.dataset.discount ?? '-Infinity');
-        }
-
-        return (a.dataset.title ?? '').localeCompare(b.dataset.title ?? '', 'es');
-      });
-
-      for (const card of visibleCards) {
+      const data = cards.map((card, index) => ({
+        id: String(index), title: card.dataset.title ?? '',
+        price: Number.isFinite(Number(card.dataset.price)) ? Number(card.dataset.price) : null,
+        discount: Number.isFinite(Number(card.dataset.discount)) ? Number(card.dataset.discount) : null,
+        isActive: card.dataset.active === 'true', isHistoricalLow: card.dataset.historicalLow === 'true'
+      }));
+      const visible = filterAndSortBooks(data, { query: searchInput?.value, sort: sortSelect?.value, price: priceFilterSelect?.value });
+      for (const card of cards) card.style.display = 'none';
+      for (const book of visible) {
+        const card = cards[Number(book.id)];
+        card.style.display = '';
         booksGrid.appendChild(card);
       }
-
-      updateResultsCount();
+      if (resultsCount) resultsCount.textContent = 'Mostrando ' + visible.length + ' libros';
+      requestAnimationFrame(() => window.dispatchEvent(new Event('resize')));
     }
 
     searchInput?.addEventListener('input', applyFilters);
     sortSelect?.addEventListener('change', applyFilters);
     priceFilterSelect?.addEventListener('change', applyFilters);
-    historicalLowFilterSelect?.addEventListener('change', applyFilters);
     applyFilters();
 
     ${chartRendererScript}
@@ -955,7 +902,7 @@ function getSelfContainedChartRendererScript(): string {
 
     function drawDataset(ctx, points, color, activePointIndex, options = {}) {
       const visible = points.filter((point) => point !== null);
-      if (visible.length < 2) return;
+      if (visible.length === 0) return;
 
       ctx.beginPath();
       ctx.strokeStyle = color;
@@ -1139,7 +1086,7 @@ function getSelfContainedChartRendererScript(): string {
     function renderAllCharts() {
       for (const book of books) {
         const canvas = document.getElementById(\`chart-book-\${book.bookId}\`);
-        if (!canvas) continue;
+        if (!canvas || canvas.closest('.book-card')?.style.display === 'none') continue;
 
         const activeSelection = canvas._activeSelection ?? null;
         const datasetPoints = renderChart(
@@ -1153,12 +1100,13 @@ function getSelfContainedChartRendererScript(): string {
           activeSelection
         );
 
+        canvas._datasetPoints = datasetPoints ?? [];
         if (!canvas.dataset.boundTooltip) {
           const handlePointer = (clientX, clientY) => {
             const rect = canvas.getBoundingClientRect();
             const x = clientX - rect.left;
             const y = clientY - rect.top;
-            const nearest = findNearestPoint(datasetPoints, x, y);
+            const nearest = findNearestPoint(canvas._datasetPoints, x, y);
             const currentSelection = canvas._activeSelection ?? null;
             const isSamePoint =
               nearest &&

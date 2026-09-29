@@ -20,7 +20,7 @@ y reducir operaciones manuales. Un commit por punto; sin push automatico.
 | 11 | Portadas descargadas en cada generacion sin limite | Resuelto: cache persistente, maximo cuatro descargas, timeout y recuperacion de portadas embebidas |
 | 12 | Esquema mantenido en bootstrap y migraciones | Resuelto: migraciones Drizzle al iniciar y por CLI; prueba de adopcion sin perdida |
 | 13 | README desactualizado | Pendiente |
-| 14 | Filtros ambiguos o aparentemente redundantes | Pendiente |
+| 14 | Filtros ambiguos o aparentemente redundantes | Resuelto: un selector de precio, minimo contextual y orden por precio; pruebas desktop y movil |
 
 ## Proteccion del historico
 
@@ -55,3 +55,17 @@ la sincronizacion sin publicar. `build-reports` reconstruye sin scrapeo ni envio
 `reports/` desde una ruta fija. El bloqueo local evita jobs simultaneos.
 Pruebas: rollback ante error de persistencia, lista parcial, libro compartido,
 actualizacion de grafica individual y consistencia entre reportes globales.
+
+## Filtros y graficas (14)
+
+Se elimina el selector separado de estado de precio y se integra su opcion
+"En su minimo historico" en Precio. "Mas barato entre los resultados" calcula el
+minimo despues de buscar y seleccionar estado de wishlist; conserva empates.
+Se agrega orden ascendente de precio. Ambos conceptos son distintos, no se
+elimina ninguno. El historico completo permanece en la vista por defecto.
+
+Chromium: escritorio 1280 px y movil 390 px, con y sin Chart.js disponible,
+combinaciones de filtros, busqueda sin acentos y series de un solo punto. Tambien
+se verificaron los HTML reales y las graficas de Amarillo de oro y gloria.
+Sin errores JavaScript ni desbordamiento horizontal. Generacion offline sin
+scrapeo ni mensajes Telegram; 5,485 observaciones en ambos reportes globales.
