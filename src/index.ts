@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import './config/loadEnv';
 import { scrapeWishlist } from './scraper/wishlistScraper';
 import { collectWishlists } from './services/wishlistSyncService';
@@ -10,6 +11,7 @@ import { WISHLISTS } from './config/wishlists';
 import { upsertWishlist, linkBookToWishlist, reconcileWishlist, retireUnconfiguredWishlists } from './services/wishlistService';
 
 async function main() {
+  const runId = randomUUID();
   if (WISHLISTS.length === 0) {
     throw new Error('No hay wishlists configuradas. Define WISHLISTS_JSON en tu .env.local');
   }
@@ -51,6 +53,7 @@ async function main() {
 
       await createPriceSnapshot({
         bookId,
+        runId,
         listPrice: parseMoney(book.listPriceText),
         discountedPrice: parseMoney(book.discountedPriceText),
         discountPercent: parseDiscount(book.discountPercentText),

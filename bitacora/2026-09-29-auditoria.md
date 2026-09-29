@@ -11,7 +11,7 @@ y reducir operaciones manuales. Un commit por punto; sin push automatico.
 | 02 | Scrapeo parcial puede desactivar libros | Resuelto: validar todas las listas antes de persistir; vacias o tarjetas incompletas abortan |
 | 03 | Historial repartido entre SQLite y HTML; fusion no idempotente | Pendiente |
 | 04 | Relaciones wishlist obsoletas y ofertas inactivas | Resuelto: membresia por lista, lastSeenAt y consultas activas; historico conservado |
-| 05 | Snapshots duplicados por libro compartido entre listas | Pendiente |
+| 05 | Snapshots duplicados por libro compartido entre listas | Resuelto: clave unica libro-ejecucion sin deduplicar registros historicos |
 | 06 | Reglas contradictorias de minimo historico | Pendiente |
 | 07 | Importacion duplicada y publicacion fragmentada | Pendiente |
 | 08 | Clientes Telegram y formateadores duplicados | Pendiente |

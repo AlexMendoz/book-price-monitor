@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import '../config/loadEnv';
 import { WISHLISTS } from '../config/wishlists';
 import { scrapeWishlist } from '../scraper/wishlistScraper';
@@ -11,6 +12,7 @@ import { getDealRankingByWishlist } from '../services/rankingService';
 import { sendTelegramMessage } from '../services/telegramService';
 
 async function main() {
+  const runId = randomUUID();
   const scraperOptions = {
     headless: readBooleanEnv('SCRAPER_HEADLESS', true),
     allowManualVerification: readBooleanEnv('SCRAPER_ALLOW_MANUAL_VERIFICATION', false),
@@ -52,6 +54,7 @@ async function main() {
 
       await createPriceSnapshot({
         bookId,
+        runId,
         listPrice: parseMoney(book.listPriceText),
         discountedPrice: parseMoney(book.discountedPriceText),
         discountPercent: parseDiscount(book.discountPercentText),

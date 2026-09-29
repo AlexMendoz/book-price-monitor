@@ -3,6 +3,7 @@ import { priceSnapshots } from '../db/schema';
 
 export async function createPriceSnapshot(input: {
   bookId: number;
+  runId?: string;
   listPrice: number | null;
   discountedPrice: number | null;
   discountPercent: number | null;
@@ -10,6 +11,7 @@ export async function createPriceSnapshot(input: {
 }): Promise<void> {
   const insertPayload = {
     bookId: input.bookId,
+    runId: input.runId ?? null,
     listPrice: input.listPrice,
     discountedPrice: input.discountedPrice,
     discountPercent: input.discountPercent,
@@ -17,5 +19,7 @@ export async function createPriceSnapshot(input: {
     scrapedAt: new Date().toISOString(),
   } as any;
 
-  await db.insert(priceSnapshots).values(insertPayload);
+  await db.insert(priceSnapshots).values(insertPayload).onConflictDoNothing({
+    target: [priceSnapshots.bookId, priceSnapshots.runId],
+  });
 }

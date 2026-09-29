@@ -55,6 +55,7 @@ export const wishlistBooks = sqliteTable(
 );
 
 export const priceSnapshots = sqliteTable('price_snapshots', {
+  runId: text('run_id'),
   id: integer('id').primaryKey({ autoIncrement: true }),
   bookId: integer('book_id')
     .notNull()
@@ -64,4 +65,4 @@ export const priceSnapshots = sqliteTable('price_snapshots', {
   discountPercent: real('discount_percent'),
   currency: text('currency').notNull().default('MXN'),
   scrapedAt: text('scraped_at').notNull().default(sql`CURRENT_TIMESTAMP`),
-});
+}, (table) => ({ bookRunUnique: uniqueIndex('price_snapshots_book_run_unique').on(table.bookId, table.runId) }));
