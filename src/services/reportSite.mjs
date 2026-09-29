@@ -1,0 +1,512 @@
+import { escapeHtml } from '../utils/format.cjs';
+import { promises as fs } from 'node:fs';
+import path from 'node:path';
+
+
+function humanize(fileName) {
+  return fileName
+    .replace(/\.html$/i, '')
+    .replaceAll('_', ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/** @param {{ reportsDir?: string, rootIndexPath?: string, rosesDir?: string }} options */
+export async function prepareReportSite(options = {}) {
+  const reportsDir = path.resolve(options.reportsDir ?? process.env.REPORTS_DIR ?? './reports');
+  const rootIndexPath = options.rootIndexPath ?? path.resolve('index.html');
+  await fs.mkdir(reportsDir, { recursive: true });
+  await fs.cp(options.rosesDir ?? path.resolve('rosas_rojas'), path.join(reportsDir, 'rosas_rojas'), { recursive: true });
+  const entries = await fs.readdir(reportsDir, { withFileTypes: true });
+  const specialItems = [
+    // {
+    //   label: '¡Feliz cumpleaños!',
+    //   href: 'rosas_rojas/index.html',
+    //   badge: 'Sorpresa',
+    //   className: 'report-link--roses',
+    // },
+  ];
+  const htmlFiles = entries
+    .filter((entry) => entry.isFile() && entry.name.toLowerCase().endsWith('.html'))
+    .map((entry) => entry.name)
+    .filter((file) => file.toLowerCase() !== 'index.html' && !file.includes('.backup-'))
+    .sort((a, b) => a.localeCompare(b, 'es'));
+
+  const reportItems = htmlFiles
+    .map((file) => {
+      const label = escapeHtml(humanize(file));
+      const href = encodeURI(file);
+      const isGlobal =
+        file === 'historico_todos_los_libros_compartible.html' ||
+        file === 'historico_todos_los_libros.html';
+      const badge = isGlobal ? '<span class="report-badge">Global</span>' : '';
+      return `<li class="report-item">
+        <a class="report-link" href="${href}">
+          <span class="report-title">${label}</span>
+          <span class="report-meta">
+            ${badge}
+            <span class="report-open">Abrir</span>
+          </span>
+        </a>
+      </li>`;
+    })
+    .join('\n      ');
+  const specialReportItems = specialItems
+    .map((item) => `<li class="report-item">
+        <a class="report-link ${escapeHtml(item.className)}" href="${encodeURI(item.href)}">
+          <span class="report-title">${escapeHtml(item.label)}</span>
+          <span class="report-meta">
+            <span class="report-badge">${escapeHtml(item.badge)}</span>
+            <span class="report-open">Abrir</span>
+          </span>
+        </a>
+      </li>`)
+    .join('\n      ');
+  const items = [specialReportItems, reportItems].filter(Boolean).join('\n      ');
+
+  const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Book Price Monitor - Reportes</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f8f6;
+      --surface: #ffffff;
+      --surface-2: #f7fbf9;
+      --text: #132822;
+      --muted: #4f6b62;
+      --brand: #0f766e;
+      --brand-soft: #d6f1ec;
+      --border: #dbe8e3;
+      --shadow: 0 16px 42px rgba(9, 48, 41, 0.12);
+    }
+
+    body {
+      font-family: 'Avenir Next', 'Montserrat', 'Segoe UI', sans-serif;
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(900px 360px at 0% -10%, #dbf4ec 0%, transparent 60%),
+        radial-gradient(900px 360px at 100% -10%, #e4f5ef 0%, transparent 60%),
+        var(--bg);
+      color: var(--text);
+    }
+
+    main {
+      max-width: 900px;
+      margin: 48px auto;
+      padding: 0 16px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      padding: 28px;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: clamp(24px, 3vw, 34px);
+      letter-spacing: 0.2px;
+    }
+
+    p {
+      margin: 0 0 22px;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .reports-count {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--muted);
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 6px 12px;
+      margin-bottom: 16px;
+    }
+
+    ul {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 12px;
+    }
+
+    .report-link {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      border-radius: 14px;
+      color: var(--text);
+      text-decoration: none;
+      transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease, background 140ms ease;
+    }
+
+    .report-link:hover {
+      transform: translateY(-1px);
+      border-color: #c5dbd3;
+      box-shadow: 0 8px 18px rgba(13, 84, 73, 0.12);
+      background: #f1faf7;
+    }
+
+    .report-link--roses {
+      color: #fff0e8;
+      border-color: #c9143b;
+      background:
+        radial-gradient(circle at 18% 20%, rgba(255, 79, 104, 0.34), transparent 34%),
+        linear-gradient(135deg, #280711 0%, #7b001b 54%, #c9143b 100%);
+      box-shadow: 0 14px 32px rgba(123, 0, 27, 0.28);
+    }
+
+    .report-link--roses:hover {
+      border-color: #ff4f68;
+      background:
+        radial-gradient(circle at 18% 20%, rgba(255, 200, 87, 0.26), transparent 34%),
+        linear-gradient(135deg, #280711 0%, #8f0627 50%, #ff4f68 100%);
+      box-shadow: 0 16px 34px rgba(201, 20, 59, 0.34);
+    }
+
+    .report-link--roses .report-badge {
+      color: #280711;
+      background: #ffc857;
+      border-color: rgba(255, 240, 232, 0.55);
+    }
+
+    .report-link--roses .report-open {
+      color: #ffc857;
+    }
+
+    .birthday-modal[hidden] {
+      display: none;
+    }
+
+    .birthday-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      background: rgba(19, 40, 34, 0.48);
+      backdrop-filter: blur(5px);
+    }
+
+    .birthday-modal__panel {
+      width: min(100%, 420px);
+      padding: 24px;
+      border: 1px solid rgba(255, 200, 87, 0.42);
+      border-radius: 22px;
+      color: #fff0e8;
+      background:
+        radial-gradient(circle at 20% 8%, rgba(255, 200, 87, 0.24), transparent 34%),
+        linear-gradient(135deg, #280711 0%, #7b001b 56%, #c9143b 100%);
+      box-shadow: 0 24px 58px rgba(40, 7, 17, 0.36);
+    }
+
+    .birthday-modal__panel h2 {
+      margin: 0 0 8px;
+      font-size: 24px;
+    }
+
+    .birthday-modal__text {
+      display: grid;
+      min-height: 88px;
+      align-items: center;
+    }
+
+    .birthday-modal__question,
+    .birthday-modal__replacement,
+    .birthday-modal__final {
+      grid-area: 1 / 1;
+      transition: opacity 360ms ease, transform 360ms ease;
+    }
+
+    .birthday-modal__replacement,
+    .birthday-modal__final,
+    .birthday-modal.is-complete .birthday-modal__question,
+    .birthday-modal.is-complete .birthday-modal__replacement {
+      opacity: 0;
+      transform: translateY(8px);
+      pointer-events: none;
+    }
+
+    .birthday-modal.is-complete .birthday-modal__final {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .birthday-modal__panel p {
+      color: #ffe0d3;
+      margin-bottom: 16px;
+    }
+
+    .birthday-modal__progress {
+      overflow: hidden;
+      width: 100%;
+      height: 18px;
+      border: 1px solid rgba(255, 240, 232, 0.5);
+      border-radius: 999px;
+      background: rgba(255, 240, 232, 0.2);
+      box-shadow: inset 0 2px 8px rgba(40, 7, 17, 0.28);
+    }
+
+    .birthday-modal__progress-bar {
+      width: 0%;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #ffc857, #ff7a8f, #fff0e8);
+      transition: width 220ms ease;
+    }
+
+    .birthday-modal__progress-value {
+      display: none;
+      margin: 8px 0 0;
+      color: #ffc857;
+      font-size: 13px;
+      font-weight: 800;
+      text-align: right;
+    }
+
+    .birthday-modal__actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .birthday-modal__actions button {
+      border: 0;
+      border-radius: 16px;
+      padding: 12px 14px;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 900;
+      transition: transform 140ms ease, box-shadow 140ms ease, opacity 180ms ease;
+    }
+
+    .birthday-modal__actions button:hover {
+      transform: translateY(-1px);
+    }
+
+    .birthday-modal__yes {
+      color: #280711;
+      background: #ffc857;
+      box-shadow: 0 12px 24px rgba(255, 200, 87, 0.25);
+    }
+
+    .birthday-modal__no {
+      position: relative;
+      overflow: hidden;
+      color: #fff0e8;
+      background: rgba(255, 240, 232, 0.18);
+    }
+
+    .birthday-modal__no span {
+      display: inline-block;
+      transition: opacity 760ms ease, transform 760ms ease, filter 760ms ease;
+    }
+
+    .birthday-modal__no-new {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: inherit;
+      opacity: 0;
+      filter: blur(8px);
+      transform: translateY(16px) scale(0.92);
+    }
+
+    .birthday-modal.is-complete .birthday-modal__actions {
+      pointer-events: none;
+    }
+
+    .birthday-modal.is-complete .birthday-modal__actions button {
+      opacity: 0.45;
+    }
+
+    .report-title {
+      font-weight: 600;
+      line-height: 1.35;
+    }
+
+    .report-meta {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .report-badge {
+      background: var(--brand-soft);
+      color: #0c5e57;
+      border: 1px solid #bde3da;
+      padding: 4px 9px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      text-transform: uppercase;
+    }
+
+    .report-open {
+      color: var(--brand);
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    @media (max-width: 640px) {
+      main {
+        margin: 22px auto;
+      }
+
+      .card {
+        padding: 18px;
+      }
+
+      .report-link {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .report-meta {
+        width: 100%;
+        justify-content: space-between;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="card">
+      <h1>Reportes de Book Price Monitor</h1>
+      <p>Selecciona un reporte para abrirlo:</p>
+      <div class="reports-count">${htmlFiles.length + specialItems.length} reportes disponibles</div>
+      <ul>
+      ${items || '<li>No hay reportes HTML disponibles todavía.</li>'}
+      </ul>
+    </section>
+  </main>
+  <div class="birthday-modal" id="birthday-modal" hidden>
+    <section class="birthday-modal__panel" aria-labelledby="birthday-title">
+      <h2 id="birthday-title">Antes de entrar</h2>
+      <div class="birthday-modal__text" aria-live="polite">
+        <p class="birthday-modal__question">Esto solo está disponible para mi novia la más preciosa, ¿eres mi novia la más preciosa, guapa, inteligente y maravillosa? 🤔</p>
+        <p class="birthday-modal__replacement"></p>
+        <p class="birthday-modal__final">Claro que tú eres mi novia, mi niña, mi reina, mi cielo, la más preciosa ❤️</p>
+      </div>
+      <div class="birthday-modal__progress" aria-label="Progreso para abrir la sorpresa">
+        <div class="birthday-modal__progress-bar" id="birthday-progress-bar"></div>
+      </div>
+      <div class="birthday-modal__progress-value" id="birthday-progress-value">0%</div>
+      <div class="birthday-modal__actions">
+        <button class="birthday-modal__yes" type="button" id="birthday-yes">Sí, sí soy ❤️</button>
+        <button class="birthday-modal__no" type="button" id="birthday-no">
+          <span class="birthday-modal__no-original">No, no soy 💔</span>
+          <span class="birthday-modal__no-new">Obvio que sí soy ❤️</span>
+        </button>
+      </div>
+    </section>
+  </div>
+  <script>
+    (() => {
+      const roseLink = document.querySelector('.report-link--roses');
+      const modal = document.getElementById('birthday-modal');
+      const progressBar = document.getElementById('birthday-progress-bar');
+      const progressValue = document.getElementById('birthday-progress-value');
+      const yesButton = document.getElementById('birthday-yes');
+      const noButton = document.getElementById('birthday-no');
+      const noOriginalText = noButton?.querySelector('.birthday-modal__no-original');
+      const noNewText = noButton?.querySelector('.birthday-modal__no-new');
+      let targetHref = '';
+      let progress = 0;
+      let isComplete = false;
+      let noClicks = 0;
+
+      if (!roseLink || !modal || !progressBar || !progressValue || !yesButton || !noButton || !noOriginalText || !noNewText) return;
+
+      const updateProgress = () => {
+        const roundedProgress = Math.min(100, Math.round(progress * 10) / 10);
+        progressBar.style.width = roundedProgress + '%';
+        progressValue.textContent = roundedProgress + '%';
+      };
+
+      const complete = () => {
+        if (isComplete) return;
+        isComplete = true;
+        progress = 100;
+        updateProgress();
+        modal.classList.add('is-complete');
+        setTimeout(() => {
+          window.location.href = targetHref;
+        }, 3200);
+      };
+
+      const advance = (amount) => {
+        if (isComplete) return;
+        progress = Math.min(100, progress + amount);
+        updateProgress();
+        if (progress >= 100) complete();
+      };
+
+      const updateNoButtonText = () => {
+        const originalOpacity = Math.max(0, 1 - noClicks * 0.22);
+        const newOpacity = noClicks < 3 ? 0 : Math.min(1, (noClicks - 2) * 0.28);
+        noOriginalText.style.opacity = String(originalOpacity);
+        noOriginalText.style.filter = 'blur(' + (noClicks * 1.6) + 'px)';
+        noOriginalText.style.transform = 'translateY(' + (-noClicks * 3) + 'px) scale(' + Math.max(0.88, 1 - noClicks * 0.02) + ')';
+        noNewText.style.opacity = String(newOpacity);
+        noNewText.style.filter = 'blur(' + Math.max(0, 8 - noClicks * 1.6) + 'px)';
+        noNewText.style.transform = 'translateY(' + Math.max(0, 16 - noClicks * 3) + 'px) scale(' + Math.min(1, 0.92 + noClicks * 0.02) + ')';
+      };
+
+      roseLink.addEventListener('click', (event) => {
+        event.preventDefault();
+        targetHref = roseLink.href;
+        progress = 0;
+        isComplete = false;
+        noClicks = 0;
+        modal.classList.remove('is-complete');
+        updateNoButtonText();
+        updateProgress();
+        modal.hidden = false;
+        yesButton.focus();
+      });
+
+      modal.addEventListener('click', (event) => {
+        if (event.target === modal && !isComplete) modal.hidden = true;
+      });
+
+      yesButton.addEventListener('click', () => advance(10));
+      noButton.addEventListener('click', () => {
+        noClicks += 1;
+        updateNoButtonText();
+        advance(noClicks >= 3 ? 10 : 4);
+      });
+    })();
+  </script>
+</body>
+</html>
+`;
+
+  const rootHtml = html.replace('<head>\n', '<head>\n  <base href="reports/" />\n');
+
+  await fs.writeFile(path.join(reportsDir, 'index.html'), html, 'utf8');
+  await fs.writeFile(rootIndexPath, rootHtml, 'utf8');
+  console.log(`index.html generado con ${htmlFiles.length} reportes.`);
+}
+

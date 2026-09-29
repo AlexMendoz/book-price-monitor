@@ -1,22 +1,12 @@
+import { reportsDirectory } from '../services/historyArchiveService';
 import { escapeHtml, formatCdmxDateTime } from '../utils/format.cjs';
 import '../config/loadEnv';
 import fs from 'node:fs';
 import path from 'node:path';
 import { getBookPriceHistory } from '../services/reportService';
 
-async function main() {
-  const bookIdArg = process.argv[2];
-
-  if (!bookIdArg) {
-    throw new Error('Debes pasar el bookId. Ejemplo: npm run chart -- 1');
-  }
-
-  const bookId = Number(bookIdArg);
-
-  if (!Number.isFinite(bookId)) {
-    throw new Error('El bookId debe ser numérico.');
-  }
-
+export async function generateBookChartReport(bookId: number) {
+  if (!Number.isInteger(bookId) || bookId <= 0) throw new Error('Indica un bookId entero positivo.');
   const history = await getBookPriceHistory(bookId);
 
   if (history.length === 0) {
@@ -205,7 +195,7 @@ async function main() {
 </html>
   `.trim();
 
-  const outputDir = path.resolve('./reports');
+  const outputDir = reportsDirectory();
   if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir, { recursive: true });
   }
@@ -215,10 +205,10 @@ async function main() {
 
   fs.writeFileSync(outputPath, html, 'utf8');
 
-  console.log(`Reporte generado en: ${outputPath}`);
+  return outputPath;
 }
 
-function sanitizeFileName(value: string): string {
+export function sanitizeFileName(value: string): string {
   return value
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
@@ -228,7 +218,7 @@ function sanitizeFileName(value: string): string {
     .slice(0, 80);
 }
 
-main().catch((error) => {
+if (require.main === module) generateBookChartReport(Number(process.argv[2])).then(console.log).catch((error) => {
   console.error('Error al generar la gráfica:', error);
   process.exit(1);
 });

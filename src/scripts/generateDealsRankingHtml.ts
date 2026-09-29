@@ -1,20 +1,17 @@
+import { reportsDirectory } from '../services/historyArchiveService';
 import { formatMoney, formatSignedMoney, formatPercent, escapeHtml } from '../utils/format.cjs';
 import '../config/loadEnv';
 import fs from 'node:fs';
 import path from 'node:path';
 import { getDealRanking } from '../services/rankingService';
 
-async function main() {
+export async function generateDealsRankingReport() {
   const ranking = await getDealRanking();
 
-  if (ranking.length === 0) {
-    console.log('No hay datos suficientes para generar el ranking HTML.');
-    return;
-  }
 
   const html = buildHtml(ranking);
 
-  const outputDir = path.resolve('./reports');
+  const outputDir = reportsDirectory();
   if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir, { recursive: true });
   }
@@ -22,7 +19,7 @@ async function main() {
   const outputPath = path.join(outputDir, 'ranking_ofertas.html');
   fs.writeFileSync(outputPath, html, 'utf8');
 
-  console.log(`Ranking HTML generado en: ${outputPath}`);
+  return outputPath;
 }
 
 function buildHtml(
@@ -352,7 +349,7 @@ function getChangeClass(value: number | null): string {
   return 'neutral';
 }
 
-main().catch((error) => {
+if (require.main === module) generateDealsRankingReport().then(console.log).catch((error) => {
   console.error('Error al generar el ranking HTML:', error);
   process.exit(1);
 });

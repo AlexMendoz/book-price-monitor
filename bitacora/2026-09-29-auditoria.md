@@ -13,7 +13,7 @@ y reducir operaciones manuales. Un commit por punto; sin push automatico.
 | 04 | Relaciones wishlist obsoletas y ofertas inactivas | Resuelto: membresia por lista, lastSeenAt y consultas activas; historico conservado |
 | 05 | Snapshots duplicados por libro compartido entre listas | Resuelto: clave unica libro-ejecucion sin deduplicar registros historicos |
 | 06 | Reglas contradictorias de minimo historico | Resuelto: calculo puro comun; minimo vigente distinto de nuevo record |
-| 07 | Importacion duplicada y publicacion fragmentada | Pendiente |
+| 07 | Importacion duplicada y publicacion fragmentada | Resuelto: sync transaccional compartido; job genera reportes, menu y recursos; preview local |
 | 08 | Clientes Telegram y formateadores duplicados | Resuelto: transporte, presentacion de ofertas y formateadores compartidos |
 | 09 | Dos implementaciones para vincular libros | Resuelto: un upsert atomico para vincular y reactivar |
 | 10 | Ranking consulta historiales libro por libro | Resuelto: consultas por lotes e indice; prueba cuenta consultas |
@@ -44,3 +44,14 @@ principal y 917 del compartible quedan representados en 5,485 observaciones de
 precios con multiplicidad; no se borraron repeticiones historicas. Las fechas
 legadas sin hora se etiquetan con precision de dia. SQLite es la fuente de las
 consultas; `reports/history.json` es su respaldo portable para reconstruccion.
+
+## Flujo unificado (07)
+
+`run-job-manual`, `run-job-headless` y `run-job` ejecutan sincronizacion validada,
+transaccion SQLite, reportes global/compartible/ranking, actualizacion de graficas
+individuales existentes, menu y recursos, y finalmente Telegram. `dev` reutiliza
+la sincronizacion sin publicar. `build-reports` reconstruye sin scrapeo ni envio.
+`prepare-site` comparte el armado de menu/recursos con Pages; `preview` sirve
+`reports/` desde una ruta fija. El bloqueo local evita jobs simultaneos.
+Pruebas: rollback ante error de persistencia, lista parcial, libro compartido,
+actualizacion de grafica individual y consistencia entre reportes globales.

@@ -19,7 +19,11 @@
     "run-job": "tsx src/scripts/runScheduledJob.ts",
     "telegram-bot": "tsx src/scripts/runTelegramBotPolling.ts",
     "typecheck": "tsc --noEmit",
-    "test": "node --require tsx/cjs --test tests/*.test.cjs"
+    "test": "node --require tsx/cjs --test tests/*.test.cjs",
+    "build-reports": "tsx src/scripts/buildReports.ts",
+    "merge-chart-all": "tsx src/scripts/mergeGlobalReport.ts",
+    "preview": "node src/scripts/preview.cjs",
+    "prepare-site": "node .github/scripts/generate-reports-index.mjs"
   },
   "dependencies": {
     "better-sqlite3": "^11.7.0",

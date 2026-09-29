@@ -103,3 +103,7 @@ docker-compose.override.yml
 # =========================
 *.bak
 *.old
+
+# Transient report builds and job locks
+.reports-build-*/
+*.job-lock

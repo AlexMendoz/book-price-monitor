@@ -1,4 +1,4 @@
-import { eq, notInArray, or, sql } from 'drizzle-orm';
+import { and, eq, isNull, notInArray, or, sql } from 'drizzle-orm';
 import { db } from '../db/client';
 import { books } from '../db/schema';
 
@@ -10,11 +10,11 @@ type UpsertBookInput = {
 };
 
 export async function upsertBook(input: UpsertBookInput): Promise<number> {
-  if (input.productUrl) {
+  {
     const existing = await db
       .select()
       .from(books)
-      .where(eq(books.productUrl, input.productUrl))
+      .where(input.productUrl ? eq(books.productUrl, input.productUrl) : and(isNull(books.productUrl), eq(books.title, input.title), input.author === null ? isNull(books.author) : eq(books.author, input.author)))
       .limit(1);
 
     if (existing.length > 0) {

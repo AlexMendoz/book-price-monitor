@@ -1,0 +1,23 @@
+const {test}=require('node:test'),assert=require('node:assert/strict');
+const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
+const dir=fs.mkdtempSync(path.join(os.tmpdir(),'reports-build-'));
+process.env.DATABASE_URL=path.join(dir,'test.db');process.env.REPORTS_DIR=path.join(dir,'reports');
+process.env.HISTORY_AUTO_RESTORE='false';process.env.REPORTS_OFFLINE='true';
+const {upsertBook}=require('../src/services/bookService.ts');
+const {createPriceSnapshot}=require('../src/services/priceSnapshotService.ts');
+const {buildReports}=require('../src/services/buildReportsService.ts');
+const {generateBookChartReport}=require('../src/scripts/generateBookChart.ts');
+const {readLegacyReport}=require('../src/services/historyArchiveService.ts');
+test('build produces synchronized global reports, existing individual charts, menu and roses assets',async()=>{
+ const bookId=await upsertBook({title:'Example',author:null,productUrl:'https://example.com/a',imageUrl:null});
+ await createPriceSnapshot({bookId,listPrice:200,discountedPrice:100,discountPercent:50,currency:'MXN'});
+ await generateBookChartReport(bookId);
+ await createPriceSnapshot({bookId,listPrice:200,discountedPrice:90,discountPercent:55,currency:'MXN'});
+ await buildReports();
+ for(const name of ['historico_todos_los_libros.html','historico_todos_los_libros_compartible.html']) assert.equal(readLegacyReport(path.join(process.env.REPORTS_DIR,name)).length,2);
+ const individual=fs.readFileSync(path.join(process.env.REPORTS_DIR,'Example.html'),'utf8');
+ assert.match(individual,/const discountedPrices = \[100,90\]/);
+ assert.ok(fs.existsSync(path.join(process.env.REPORTS_DIR,'rosas_rojas/index.html')));
+ assert.match(fs.readFileSync(path.join(process.env.REPORTS_DIR,'index.html'),'utf8'),/Example.html/);
+ assert.equal(process.env.REPORTS_DIR,path.join(dir,'reports'));
+});
