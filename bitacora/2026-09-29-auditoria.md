@@ -7,7 +7,7 @@ y reducir operaciones manuales. Un commit por punto; sin push automatico.
 
 | ID | Hallazgo | Estado |
 | --- | --- | --- |
-| 01 | Configuracion JSON esencial excluida de Git | Pendiente |
+| 01 | Configuracion JSON esencial excluida de Git | Resuelto: manifiesto, lockfile, tsconfig y CI versionados |
 | 02 | Scrapeo parcial puede desactivar libros | Pendiente |
 | 03 | Historial repartido entre SQLite y HTML; fusion no idempotente | Pendiente |
 | 04 | Relaciones wishlist obsoletas y ofertas inactivas | Pendiente |
