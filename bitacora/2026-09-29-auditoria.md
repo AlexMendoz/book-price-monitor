@@ -12,7 +12,7 @@ y reducir operaciones manuales. Un commit por punto; sin push automatico.
 | 03 | Historial repartido entre SQLite y HTML; fusion no idempotente | Resuelto: importar a SQLite, respaldo JSON portable y fechas con precision explicita |
 | 04 | Relaciones wishlist obsoletas y ofertas inactivas | Resuelto: membresia por lista, lastSeenAt y consultas activas; historico conservado |
 | 05 | Snapshots duplicados por libro compartido entre listas | Resuelto: clave unica libro-ejecucion sin deduplicar registros historicos |
-| 06 | Reglas contradictorias de minimo historico | Pendiente |
+| 06 | Reglas contradictorias de minimo historico | Resuelto: calculo puro comun; minimo vigente distinto de nuevo record |
 | 07 | Importacion duplicada y publicacion fragmentada | Pendiente |
 | 08 | Clientes Telegram y formateadores duplicados | Pendiente |
 | 09 | Dos implementaciones para vincular libros | Pendiente |

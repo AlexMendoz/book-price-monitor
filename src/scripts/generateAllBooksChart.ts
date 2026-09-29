@@ -1,3 +1,4 @@
+import { isAtHistoricalLow } from '../services/dealMetrics';
 import { reportsDirectory, writeHistoryArchive } from '../services/historyArchiveService';
 import '../config/loadEnv';
 import fs from 'node:fs';
@@ -197,11 +198,7 @@ function createCoverPlaceholderDataUrl(title: string): string {
 }
 
 function isCurrentHistoricalLow(book: BookHistory): boolean {
-  return (
-    book.currentDiscountedPrice !== null &&
-    book.historicalMinDiscountedPrice !== null &&
-    book.currentDiscountedPrice <= book.historicalMinDiscountedPrice
-  );
+  return isAtHistoricalLow(book.currentDiscountedPrice, book.historicalMinDiscountedPrice);
 }
 
 export function buildHtml(books: BookHistory[], options: GenerateAllBooksChartOptions): string {

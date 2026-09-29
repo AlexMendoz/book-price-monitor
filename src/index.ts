@@ -5,7 +5,6 @@ import { collectWishlists } from './services/wishlistSyncService';
 import { parseDiscount, parseMoney } from './utils/money';
 import { markBooksOutsideCurrentWishlistsInactive, upsertBook } from './services/bookService';
 import { createPriceSnapshot } from './services/priceSnapshotService';
-import { analyzeDeal } from './services/dealAnalyzer';
 
 import { WISHLISTS } from './config/wishlists';
 import { upsertWishlist, linkBookToWishlist, reconcileWishlist, retireUnconfiguredWishlists } from './services/wishlistService';
@@ -44,12 +43,6 @@ async function main() {
       activeBookIds.add(bookId);
       wishlistBookIds.push(bookId);
       await linkBookToWishlist(wishlistId, bookId);
-      await analyzeDeal({
-        bookId,
-        currentListPrice: parseMoney(book.listPriceText),
-        currentDiscountedPrice: parseMoney(book.discountedPriceText),
-        currentDiscountPercent: parseDiscount(book.discountPercentText),
-      });
 
       await createPriceSnapshot({
         bookId,

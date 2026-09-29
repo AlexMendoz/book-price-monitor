@@ -1,3 +1,4 @@
+import { calculateDealMetrics } from './dealMetrics';
 import { restorePublishedHistory } from './historyArchiveService';
 import { activeBookCondition, activeMembershipCondition } from './activity';
 import { and, asc, desc, eq } from 'drizzle-orm';
@@ -19,6 +20,7 @@ export type RankedBookDeal = {
   dropVsPrevious: number | null;
   savingsVsPreviousPercent: number | null;
   isHistoricalLow: boolean;
+  isNewHistoricalLow: boolean;
   hasHighDiscount: boolean;
   looksLikeInflatedBasePrice: boolean;
   dealScore: number;
@@ -101,50 +103,7 @@ async function buildRanking(bookList: RankedBookSource[]): Promise<RankedBookDea
     const current = snapshots[0];
     const previous = snapshots[1] ?? null;
 
-    const historicalValues = snapshots
-      .map((s) => s.discountedPrice)
-      .filter((v): v is number => v !== null);
-
-    const historicalMinDiscountedPrice =
-      historicalValues.length > 0 ? Math.min(...historicalValues) : null;
-
-    const dropVsPrevious =
-      current.discountedPrice != null && previous?.discountedPrice != null
-        ? previous.discountedPrice - current.discountedPrice
-        : null;
-
-    const savingsVsPreviousPercent =
-      dropVsPrevious != null &&
-      previous?.discountedPrice != null &&
-      previous.discountedPrice > 0
-        ? (dropVsPrevious / previous.discountedPrice) * 100
-        : null;
-
-    const isHistoricalLow =
-      current.discountedPrice !== null &&
-      historicalMinDiscountedPrice !== null &&
-      current.discountedPrice <= historicalMinDiscountedPrice;
-
-    const hasHighDiscount =
-      current.discountPercent != null && current.discountPercent >= 40;
-
-    const looksLikeInflatedBasePrice =
-      current.listPrice != null &&
-      current.discountedPrice != null &&
-      current.discountPercent != null &&
-      previous?.listPrice != null &&
-      previous?.discountedPrice != null &&
-      previous?.discountPercent != null &&
-      current.listPrice > previous.listPrice &&
-      current.discountPercent > previous.discountPercent &&
-      current.discountedPrice >= previous.discountedPrice;
-
-    let dealScore = 0;
-    if (isHistoricalLow) dealScore += 50;
-    if ((dropVsPrevious ?? 0) > 0) dealScore += 30;
-    if (hasHighDiscount) dealScore += 20;
-    if (savingsVsPreviousPercent != null) dealScore += Math.min(savingsVsPreviousPercent, 25);
-    if (looksLikeInflatedBasePrice) dealScore -= 25;
+    const metrics = calculateDealMetrics(current, previous, snapshots.slice(1).map(row => row.discountedPrice));
 
     ranking.push({
       bookId: book.id,
@@ -156,14 +115,7 @@ async function buildRanking(bookList: RankedBookSource[]): Promise<RankedBookDea
       currentListPrice: current.listPrice,
       currentDiscountedPrice: current.discountedPrice,
       currentDiscountPercent: current.discountPercent,
-      previousDiscountedPrice: previous?.discountedPrice ?? null,
-      historicalMinDiscountedPrice,
-      dropVsPrevious,
-      savingsVsPreviousPercent,
-      isHistoricalLow,
-      hasHighDiscount,
-      looksLikeInflatedBasePrice,
-      dealScore,
+      ...metrics,
     });
   }
 
