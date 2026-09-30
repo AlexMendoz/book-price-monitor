@@ -19,7 +19,7 @@ y reducir operaciones manuales. Un commit por punto; sin push automatico.
 | 10 | Ranking consulta historiales libro por libro | Resuelto: consultas por lotes e indice; prueba cuenta consultas |
 | 11 | Portadas descargadas en cada generacion sin limite | Resuelto: cache persistente, maximo cuatro descargas, timeout y recuperacion de portadas embebidas |
 | 12 | Esquema mantenido en bootstrap y migraciones | Resuelto: migraciones Drizzle al iniciar y por CLI; prueba de adopcion sin perdida |
-| 13 | README desactualizado | Pendiente |
+| 13 | README desactualizado | Resuelto: comandos reales, flujo automatico, historico, filtros y publicacion documentados |
 | 14 | Filtros ambiguos o aparentemente redundantes | Resuelto: un selector de precio, minimo contextual y orden por precio; pruebas desktop y movil |
 
 ## Proteccion del historico
@@ -85,3 +85,33 @@ Se versiona el snapshot del esquema actual para que `npm run generate` no intent
 crear otra vez las tablas iniciales. La configuracion Drizzle usa la misma
 prioridad de entorno que la aplicacion. Validacion: `npm run generate` no detecta
 diferencias ni produce migraciones redundantes.
+
+## Indice de commits
+
+| Punto | Commit |
+| --- | --- |
+| Bitacora inicial | `3f13052` |
+| 01 Configuracion reproducible | `751de3d` |
+| 02 Extracciones incompletas | `7b4114d` |
+| 03 Historico portable y recuperacion | `2feefef` |
+| 04 Membresias e inactividad | `3abc09a` |
+| 05 Una observacion por ejecucion | `5871e54` |
+| 06 Reglas de ofertas | `1835e49` |
+| 07 Flujo automatico | `f74e796` |
+| 08 Telegram y formatos | `18f3238` |
+| 09 Vinculos atomicos | `5207d28` |
+| 10 Ranking por lotes | `e5bf732` |
+| 11 Cache de portadas | `253d2f6` |
+| 12 Migraciones | `6719cad`, cierre `4a14310` |
+| 13 Documentacion | Commit que incorpora este indice y actualiza README |
+| 14 Filtros y graficas | `39eafa5` |
+| Adicional: identidades de producto | `451a32f` |
+
+## Limites operativos documentados
+
+No se ejecuto scrapeo real ni se enviaron notificaciones reales durante esta
+refactorizacion. Las pruebas usan datos y transporte simulados. La publicacion
+requiere un push posterior; los commits de esta tarea son locales. Una lista
+vacia se considera no verificable y no causa bajas masivas. Un fallo de Telegram
+no revierte precios ya guardados. Las fechas historicas sin hora no se presentan
+como horas recuperadas en el respaldo portable.

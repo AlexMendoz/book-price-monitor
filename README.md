@@ -1,193 +1,156 @@
 # Book Price Monitor
 
-Monitor personal de precios de libros en Buscalibre con almacenamiento historico en SQLite y alertas por Telegram.
-
-## Descripcion
-
-El proyecto scrapea una o varias wishlists de Buscalibre, guarda snapshots de precios, calcula ranking de ofertas y permite consultar resultados por bot de Telegram.
-
-Flujo principal:
-
-1. Lee wishlists configuradas desde `WISHLISTS_JSON` en `.env.local`.
-2. Extrae libros y precios con Playwright.
-3. Hace upsert de libros/listas y guarda snapshot de precios.
-4. Calcula indicadores de oferta (minimo historico, bajada vs anterior, descuento alto, posibles descuentos sospechosos).
-5. Publica resultados por Telegram (job automatico o bot interactivo).
-
-## Stack
-
-- Node.js 20.x
-- TypeScript
-- Playwright
-- SQLite (`better-sqlite3`)
-- Drizzle ORM / Drizzle Kit
-- Telegram Bot API (HTTP)
-
-## Estructura
-
-```text
-src/
-  config/
-    wishlists.ts
-  db/
-    client.ts
-    schema.ts
-  scraper/
-    wishlistScraper.ts
-  services/
-    bookService.ts
-    wishlistService.ts
-    priceSnapshotService.ts
-    rankingService.ts
-    telegramService.ts
-    telegramBotApi.ts
-    telegramCommandsService.ts
-  scripts/
-    runScheduledJob.ts
-    runTelegramBotPolling.ts
-    listBooks.ts
-    generateBookChart.ts
-    generateAllBooksChart.ts
-    generateShareableAllBooksChart.ts
-    rankDeals.ts
-    generateDealsRankingHtml.ts
-    sendDealsTelegram.ts
-  index.ts
-```
-
-## Base de datos
-
-La base se crea en `./data/prices.db` por defecto (o en `DATABASE_URL` si se define).
-
-Tablas principales:
-
-- `wishlists`
-- `books`
-- `wishlist_books`
-- `price_snapshots`
-
-Migraciones:
-
-- SQL generado en `drizzle/`
-- Config en `drizzle.config.ts`
+Monitor de precios de libros en Buscalibre con historico SQLite, reportes HTML,
+GitHub Pages y notificaciones Telegram.
 
 ## Instalacion
 
+Desde la raiz del proyecto:
+
 ```bash
 nvm use
-npm install
+npm ci
+npx playwright install chromium
 ```
 
-Instalar navegadores de Playwright:
+En Linux, si faltan dependencias del navegador:
 
 ```bash
-npx playwright install
+npx playwright install-deps chromium
 ```
 
-En Linux, si hace falta:
+Crea `.env` tomando `.env.example` como referencia. Configura las listas en
+`WISHLISTS_JSON` como un arreglo de objetos `{ "name": "Mi lista", "url": "URL real" }`.
+La prioridad de configuracion es: variables del shell, `.env.local`, `.env`.
+Los enlaces personales y credenciales no se versionan.
+
+## Uso habitual
 
 ```bash
-npx playwright install-deps
+npm run run-job-manual
+npm run preview
 ```
 
-## Configuracion
+Abre `http://127.0.0.1:4173`. El servidor usa `reports/` como raiz: no crees otra
+carpeta `reports` dentro de ella ni copies archivos manualmente.
 
-1. Crea `.env` basado en `.env.example`.
-2. Define estas variables:
+El job realiza, en orden:
 
-```env
-DATABASE_URL=./data/prices.db
-TELEGRAM_BOT_TOKEN=tu_token
-TELEGRAM_CHAT_ID=tu_chat_id
-SCRAPER_HEADLESS=true
-SCRAPER_ALLOW_MANUAL_VERIFICATION=false
-SCRAPER_WAIT_AFTER_LOAD_MS=3000
-WISHLISTS_JSON=[{"name":"Wishlist 1","url":"https://www.buscalibre.com.mx/v2/tu_wishlist_1.html"},{"name":"Wishlist 2","url":"https://www.buscalibre.com.mx/v2/tu_wishlist_2.html"}]
-```
+1. Extrae y valida todas las wishlists.
+2. Guarda libros, membresias y una observacion por libro y ejecucion en una transaccion.
+3. Regenera reportes global, compartible y ranking, y actualiza las graficas individuales existentes.
+4. Prepara el menu y copia los recursos de `rosas_rojas/`.
+5. Notifica las ofertas por Telegram si esta configurado.
 
-Notas:
+Una extraccion vacia o incompleta aborta la sincronizacion antes de persistir
+precios o bajas. Una wishlist realmente vacia requiere revisar su configuracion;
+no se interpreta automaticamente como una extraccion completa. Los fallos de
+persistencia revierten la transaccion. Un error posterior de reportes o Telegram
+no revierte los precios ya guardados: puedes regenerar sin repetir el scrapeo.
 
-- `WISHLISTS_JSON` debe ser un arreglo JSON valido de objetos con `name` y `url`.
-- Recomendado: guarda tus enlaces personales en `.env.local` (archivo no versionado).
-- `SCRAPER_ALLOW_MANUAL_VERIFICATION=false` evita que `run-job` espere `ENTER` cuando aparece una validacion humana.
+## Comandos
 
-## Scripts NPM
+| Comando | Resultado |
+| --- | --- |
+| `npm run run-job-manual` | Flujo completo con navegador y verificacion manual |
+| `npm run run-job-headless` | Flujo completo sin UI; falla si requiere verificacion humana |
+| `npm run run-job` | Flujo completo con las opciones del entorno |
+| `npm run dev` | Solo sincronizacion, reutilizando el mismo servicio |
+| `npm run build-reports` | Todos los reportes, menu y recursos; sin scrapeo ni Telegram |
+| `npm run chart-all` | Reporte global desde el historico conservado |
+| `npm run chart-all-shareable` | Reporte global autocontenido |
+| `npm run chart -- <bookId>` | Grafica individual; consulta los IDs con `list-books` |
+| `npm run merge-chart-all -- <reporte.html>` | Recupera historia de un HTML global a SQLite y regenera |
+| `npm run prepare-site` | Menu y recursos, usando el mismo armado que Pages |
+| `npm run preview` | Servidor local, puerto 4173 o variable `PORT` |
+| `npm run list-books` | Libros e identificadores locales |
+| `npm run rank-deals` | Ranking de libros activos en consola |
+| `npm run rank-deals-html` | Ranking HTML, incluso si no hay ofertas activas |
+| `npm run send-telegram` | Envia el ranking global por Telegram |
+| `npm run telegram-bot` | Bot interactivo por wishlist |
+| `npm run migrate` | Aplica las migraciones pendientes |
+| `npm run generate` | Genera una migracion al modificar `src/db/schema.ts` |
+| `npm run typecheck` | Verificacion TypeScript |
+| `npm test` | Pruebas con bases temporales y transporte simulado |
 
-```json
-{
-  "dev": "tsx src/index.ts",
-  "generate": "drizzle-kit generate",
-  "migrate": "drizzle-kit migrate",
-  "list-books": "tsx src/scripts/listBooks.ts",
-  "chart": "tsx src/scripts/generateBookChart.ts",
-  "chart-all": "tsx src/scripts/generateAllBooksChart.ts",
-  "merge-chart-all": "tsx src/scripts/mergeGlobalReport.ts",
-  "chart-all-shareable": "tsx src/scripts/generateShareableAllBooksChart.ts",
-  "rank-deals": "tsx src/scripts/rankDeals.ts",
-  "rank-deals-html": "tsx src/scripts/generateDealsRankingHtml.ts",
-  "send-telegram": "tsx src/scripts/sendDealsTelegram.ts",
-  "run-job-manual": "SCRAPER_HEADLESS=false SCRAPER_ALLOW_MANUAL_VERIFICATION=true tsx src/scripts/runScheduledJob.ts",
-  "run-job-headless": "SCRAPER_HEADLESS=true SCRAPER_ALLOW_MANUAL_VERIFICATION=false tsx src/scripts/runScheduledJob.ts",
-  "run-job": "tsx src/scripts/runScheduledJob.ts",
-  "telegram-bot": "tsx src/scripts/runTelegramBotPolling.ts"
-}
-```
-
-Uso recomendado:
-
-- `npm run run-job-headless`: scrapeo + ranking por wishlist + envio a Telegram sin UI.
-- `npm run run-job-manual`: scrapeo con navegador para resolver validaciones manuales.
-- `npm run telegram-bot`: bot interactivo (`/start`, `/listas`, `/ofertas`, `/reporte_global`).
-- `npm run chart -- <bookId>`: generar HTML con historial de un libro.
-- `npm run merge-chart-all`: respalda el reporte global actual y le agrega el último snapshot local de cada libro, conservando el historial ya embebido en el HTML. Puedes indicar un reporte base: `npm run merge-chart-all -- reports/archivo.html`.
-
-## Bot de Telegram
-
-El bot hace polling por `getUpdates` y ofrece:
-
-- Seleccion de wishlist.
-- Vistas por categoria:
-  - Top ofertas
-  - Minimos historicos
-  - Sospechosos
-  - Descuento alto
-  - Precios historicos por libro (lista por wishlist + detalle por seleccion)
-- Envio de reporte global HTML compartible.
-
-Comandos registrados:
-
-- `/start`
-- `/listas`
-- `/ofertas`
-- `/reporte_global`
-
-Si el bot no responde al correr `npm run telegram-bot`, revisa:
-
-- `TELEGRAM_BOT_TOKEN` valido en `.env`.
-- Que no haya webhook activo previo. El script de polling ejecuta `deleteWebhook` al iniciar para evitar conflicto `409 Conflict`.
-
-## Automatizacion (cron)
-
-Ejemplo para correr el job cada 6 horas:
+Para reconstruir sin descargar portadas:
 
 ```bash
-0 */6 * * * cd /ruta/a/book-price-monitor && /usr/bin/env bash -lc 'source ~/.nvm/nvm.sh && nvm use && npm run run-job' >> scraper.log 2>&1
+REPORTS_OFFLINE=true npm run build-reports
 ```
+
+Las portadas se recuperan de los HTML existentes y del cache local. Sin una
+portada disponible se usa un marcador; esto no afecta las series de precios.
+
+## Conservacion del historico
+
+SQLite (`DATABASE_URL`, por defecto `data/prices.db`) es la fuente de las consultas.
+Antes de generar reportes se recuperan las observaciones que falten desde
+`reports/history.json` y los HTML globales presentes. Cada importacion respalda
+la base en `data/backups/`; la importacion es repetible sin agregar duplicados.
+
+`reports/history.json` es el respaldo portable versionado. Permite reconstruir
+los precios en otro equipo aunque SQLite no este en Git. No contiene la
+configuracion privada de las wishlists: ejecuta una sincronizacion para recuperar
+sus membresias. Los IDs numericos de libros son locales a cada base.
+
+Las fechas antiguas que solo conservan el dia mantienen esa precision; no se
+recuperan horas que el HTML anterior habia descartado. No se borran observaciones
+historicas repetidas. Las URLs de Buscalibre con diferente slug y el mismo
+identificador `/p/` se reunen en un producto sin eliminar sus precios.
+
+Salir de una wishlist o superar siete dias sin actualizarse desactiva el libro
+para ofertas, pero su historial sigue visible en los reportes globales.
+Las membresias se controlan por lista y la reaparicion reactiva el vinculo.
+
+## Filtros
+
+El reporte global tiene busqueda y dos selectores:
+
+- **Orden y wishlist:** nombre, descuento, precio ascendente o solo libros dentro/fuera de lista.
+- **Precio:** todos, mas barato entre los resultados, en su minimo historico o por debajo de un limite.
+
+"Mas barato" compara los precios dentro de la busqueda y estado seleccionados,
+incluyendo empates. "En su minimo historico" compara cada libro con su propio
+historial. Igualar el minimo no equivale a batir un nuevo record; la primera
+observacion establece una referencia y no cuenta como nuevo record.
+
+El reporte compartible dibuja sus graficas sin dependencias externas. El global
+normal usa Chart.js y dispone de un renderizador local de respaldo si no carga.
+
+## Telegram y automatizacion
+
+Configura `TELEGRAM_BOT_TOKEN` y `TELEGRAM_CHAT_ID` para notificaciones del job.
+El bot interactivo ofrece `/start`, `/listas`, `/ofertas` y `/reporte_global`.
+Los mensajes extensos se dividen en varios envios conservando los bloques HTML.
+
+Ejemplo de cron cada seis horas, ajustando la ruta:
+
+```cron
+0 */6 * * * cd /ruta/book-price-monitor && /usr/bin/env bash -lc 'source ~/.nvm/nvm.sh && nvm use && npm run run-job-headless' >> scraper.log 2>&1
+```
+
+El job y `build-reports` usan un bloqueo junto a SQLite. Si el proceso termina
+abruptamente y deja un archivo `.job-lock`, verifica que ya no exista el proceso
+indicado dentro del archivo antes de retirarlo.
 
 ## GitHub Pages
 
-El repo incluye el workflow [`deploy-pages.yml`](.github/workflows/deploy-pages.yml) para publicar automaticamente la carpeta `reports/` en GitHub Pages cuando hay push a `master`.
+Despues del job o `build-reports`, revisa y versiona los cambios de `reports/`,
+incluido `history.json`. El push a `master` publica los HTML versionados; Pages
+prepara el menu y los recursos, pero no scrapea ni consulta tu base local.
+En GitHub selecciona `Settings > Pages > Source: GitHub Actions`.
 
-Pasos para activarlo en GitHub:
+La tarjeta de cumpleanos sigue deshabilitada en `src/services/reportSite.mjs`.
+No es necesario modificar HTML generados para habilitarla.
 
-1. Ve a `Settings > Pages`.
-2. En `Build and deployment`, selecciona `Source: GitHub Actions`.
-3. Haz push a `master` y espera que termine el workflow `Deploy Reports To GitHub Pages`.
+## Estructura y bitacora
 
-El sitio se publica con un `index.html` generado automaticamente por [`generate-reports-index.mjs`](.github/scripts/generate-reports-index.mjs).
-
-## Estado actual
-
-El nucleo scraper + base + bot por wishlist esta funcionando y alineado.
-
-Hay scripts de ranking global (`rank-deals`, `rank-deals-html`, `send-telegram`) que dependen de una funcion `getDealRanking` que no existe en el servicio actual (`rankingService` exporta `getDealRankingByWishlist`). Se recomienda ajustarlos o usar `run-job`/`telegram-bot` mientras tanto.
+- `src/services/wishlistSyncService.ts`: sincronizacion compartida y transaccion.
+- `src/services/historyArchiveService.ts`: recuperacion y respaldo portable.
+- `src/services/dealMetrics.ts`: reglas comunes de ofertas.
+- `src/services/buildReportsService.ts`: generacion completa en carpeta temporal.
+- `src/services/reportSite.mjs`: menu y recursos comunes a local y Pages.
+- `drizzle/`: migraciones y metadatos versionados, aplicados tambien al abrir la base.
+- `tests/`: pruebas aisladas; `tests/reports.browser.cjs` valida escritorio y movil.
+- [Bitacora de auditoria](bitacora/2026-09-29-auditoria.md): hallazgos, resoluciones, commits y validaciones.
