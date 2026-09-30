@@ -23,7 +23,8 @@
     "build-reports": "tsx src/scripts/buildReports.ts",
     "merge-chart-all": "tsx src/scripts/mergeGlobalReport.ts",
     "preview": "node src/scripts/preview.cjs",
-    "prepare-site": "node .github/scripts/generate-reports-index.mjs"
+    "prepare-site": "node .github/scripts/generate-reports-index.mjs",
+    "test:browser": "node --require tsx/cjs tests/reports.browser.cjs"
   },
   "dependencies": {
     "better-sqlite3": "^11.7.0",

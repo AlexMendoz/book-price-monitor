@@ -72,6 +72,7 @@ no revierte los precios ya guardados: puedes regenerar sin repetir el scrapeo.
 | `npm run generate` | Genera una migracion al modificar `src/db/schema.ts` |
 | `npm run typecheck` | Verificacion TypeScript |
 | `npm test` | Pruebas con bases temporales y transporte simulado |
+| `npm run test:browser` | Filtros y graficas en Chromium, escritorio y movil |
 
 Para reconstruir sin descargar portadas:
 

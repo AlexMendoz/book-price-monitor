@@ -25,3 +25,9 @@ test('legacy history survives repeated imports and report regeneration with null
   await assert.rejects(importHistoryRows([{...row,scrapedAt:'invalid'}]),/invalido/);
   assert.equal(sqlite.prepare('SELECT count(*) AS n FROM price_snapshots').get().n,3);
 });
+test('portable archive restores a database without price observations',async()=>{
+  sqlite.exec('DELETE FROM price_snapshots');
+  process.env.HISTORY_AUTO_RESTORE='true';
+  await require('../src/services/historyArchiveService.ts').restorePublishedHistory();
+  assert.equal(sqlite.prepare('SELECT count(*) AS n FROM price_snapshots').get().n,3);
+});

@@ -26,3 +26,11 @@ test('shared ingestion commits one observation and rolls back persistence failur
  assert.equal(sqlite.prepare('SELECT title FROM books').get().title,'Shared');
  assert.equal(sqlite.prepare('SELECT count(*) AS n FROM price_snapshots').get().n,1);
 });
+test('job lock prevents overlap and releases after failure',async()=>{
+ const {withJobLock}=require('../src/services/jobLock.ts');
+ await assert.rejects(withJobLock(async()=>{
+  await assert.rejects(withJobLock(async()=>{}),/bloqueo/);
+  throw new Error('simulated failure');
+ }),/simulated failure/);
+ assert.equal(await withJobLock(async()=>42),42);
+});

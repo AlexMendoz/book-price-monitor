@@ -103,7 +103,7 @@ diferencias ni produce migraciones redundantes.
 | 10 Ranking por lotes | `e5bf732` |
 | 11 Cache de portadas | `253d2f6` |
 | 12 Migraciones | `6719cad`, cierre `4a14310` |
-| 13 Documentacion | Commit que incorpora este indice y actualiza README |
+| 13 Documentacion | `7a2b1cf` |
 | 14 Filtros y graficas | `39eafa5` |
 | Adicional: identidades de producto | `451a32f` |
 
@@ -115,3 +115,25 @@ requiere un push posterior; los commits de esta tarea son locales. Una lista
 vacia se considera no verificable y no causa bajas masivas. Un fallo de Telegram
 no revierte precios ya guardados. Las fechas historicas sin hora no se presentan
 como horas recuperadas en el respaldo portable.
+
+## Validacion final - 2026-09-30
+
+- `npm run typecheck`: correcto.
+- `npm test`: 16 pruebas correctas, incluyendo rollback, expiracion, aliases,
+  reconstruccion desde respaldo portable y bloqueo de ejecuciones simultaneas.
+- `npm run test:browser`: correcto en 1280 px y 390 px; filtros, empates,
+  series de un punto y renderizado de respaldo sin CDN.
+- `npm ci` en checkout temporal limpio: instalacion correcta. TypeScript,
+  pruebas, `build-reports` y `merge-chart-all` funcionan sin `.env` ni base local.
+- Fusion repetida en el checkout limpio: cero observaciones agregadas; permanecen
+  5,485 observaciones y 169 productos unicos.
+- Comparacion con la copia de reportes anterior a los cambios: las 5,485
+  observaciones originales siguen representadas, contando repeticiones.
+- Preview HTTP: los siete enlaces del menu y los recursos de rosas responden
+  200; 169 graficas y una unica tarjeta de Amarillo de oro y gloria.
+- `npm run generate`: sin diferencias de esquema ni migraciones nuevas.
+- `git diff --check`: correcto.
+
+Las pruebas de navegador quedan disponibles como script NPM e incluidas en CI.
+El servidor temporal usado para verificar enlaces se detuvo al terminar.
+No se hizo push ni se modificaron credenciales.
