@@ -64,7 +64,7 @@ minimo despues de buscar y seleccionar estado de wishlist; conserva empates.
 Se agrega orden ascendente de precio. Ambos conceptos son distintos, no se
 elimina ninguno. El historico completo permanece en la vista por defecto.
 
-Chromium: escritorio 1280 px y movil 390 px, con y sin Chart.js disponible,
+Chromium: escritorio 1280 px y movil 390 px, reporte compartible y fallback sin Chart.js,
 combinaciones de filtros, busqueda sin acentos y series de un solo punto. Tambien
 se verificaron los HTML reales y las graficas de Amarillo de oro y gloria.
 Sin errores JavaScript ni desbordamiento horizontal. Generacion offline sin
@@ -77,4 +77,11 @@ slugs distintos pero el mismo `/p/64595701`. Se identifica el producto por host
 e identificador estable de Buscalibre. Las observaciones y membresias de alias
 se reasignan al libro canonico; se conservan los registros originales de libros
 como inactivos y no se elimina ningun snapshot. Regeneracion: 5,485 observaciones,
-170 productos unicos. Prueba de colision de runId y de importacion repetida incluida.
+169 productos unicos. Prueba de colision de runId y de importacion repetida incluida.
+
+## Cierre de migraciones (12)
+
+Se versiona el snapshot del esquema actual para que `npm run generate` no intente
+crear otra vez las tablas iniciales. La configuracion Drizzle usa la misma
+prioridad de entorno que la aplicacion. Validacion: `npm run generate` no detecta
+diferencias ni produce migraciones redundantes.
