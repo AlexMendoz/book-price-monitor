@@ -34,3 +34,24 @@ test('job lock prevents overlap and releases after failure',async()=>{
  }),/simulated failure/);
  assert.equal(await withJobLock(async()=>42),42);
 });
+test('missing prices retain membership and history without creating a zero price',async()=>{
+ const url='https://example.com/unavailable';
+ await syncWishlists(lists,{},async()=>[{...raw,title:'Unavailable',productUrl:url}]);
+ const id=sqlite.prepare('SELECT id FROM books WHERE product_url = ?').get(url).id;
+ await syncWishlists(lists,{},async()=>[{...raw,title:'Unavailable',productUrl:url,discountedPriceText:'No disponible'}]);
+ const history=sqlite.prepare('SELECT discounted_price, discount_percent FROM price_snapshots WHERE book_id = ? ORDER BY id').all(id);
+ assert.deepEqual(history.map(r=>r.discounted_price),[100,null]);
+ assert.equal(history.at(-1).discount_percent,null);
+ assert.equal(sqlite.prepare('SELECT is_active FROM books WHERE id = ?').get(id).is_active,1);
+ assert.equal(sqlite.prepare('SELECT count(*) AS n FROM wishlist_books WHERE book_id = ? AND is_active = 1').get(id).n,2);
+ await assert.rejects(syncWishlists(lists,{},async()=>[{...raw,title:null}]),/incompleta/);
+ assert.equal(sqlite.prepare('SELECT count(*) AS n FROM price_snapshots WHERE book_id = ?').get(id).n,2);
+});
+test('a priced observation takes precedence over an unavailable copy in another wishlist',async()=>{
+ for(const reversed of [false,true]) {
+  const url='https://example.com/shared-availability-'+reversed;
+  await syncWishlists(lists,{},async list=>[{...raw,productUrl:url,discountedPriceText:((list==='a')!==reversed)?null:'$95'}]);
+  const rows=sqlite.prepare('SELECT discounted_price FROM price_snapshots JOIN books ON books.id = book_id WHERE product_url = ?').all(url);
+  assert.deepEqual(rows.map(r=>r.discounted_price),[95]);
+ }
+});

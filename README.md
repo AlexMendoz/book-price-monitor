@@ -43,7 +43,11 @@ El job realiza, en orden:
 5. Notifica las ofertas por Telegram si esta configurado.
 
 Una extraccion vacia o incompleta aborta la sincronizacion antes de persistir
-precios o bajas. Una wishlist realmente vacia requiere revisar su configuracion;
+precios o bajas si hay tarjetas sin titulo identificable. Un libro identificado
+sin precio conserva su membresia y registra un precio no disponible (`null`),
+sin borrar sus observaciones anteriores ni convertir la ausencia en cero.
+Si aparece con precio en otra lista, se prioriza esa observacion en la misma ejecucion.
+Una wishlist realmente vacia requiere revisar su configuracion;
 no se interpreta automaticamente como una extraccion completa. Los fallos de
 persistencia revierten la transaccion. Un error posterior de reportes o Telegram
 no revierte los precios ya guardados: puedes regenerar sin repetir el scrapeo.

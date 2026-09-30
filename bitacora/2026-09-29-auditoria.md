@@ -137,3 +137,22 @@ como horas recuperadas en el respaldo portable.
 Las pruebas de navegador quedan disponibles como script NPM e incluidas en CI.
 El servidor temporal usado para verificar enlaces se detuvo al terminar.
 No se hizo push ni se modificaron credenciales.
+
+## Correccion posterior - 2026-09-30: tarjetas sin precio
+
+Incidencia reportada: `Extraccion incompleta: 19 de 20 tarjetas validas`.
+La validacion anterior descartaba tanto tarjetas sin titulo como libros sin
+precio. Sin el HTML de esa ejecucion no se puede afirmar cual campo faltaba.
+Se reprodujo y corrigio el caso de 19 libros con precio y uno sin precio:
+
+- Un libro identificado sin precio conserva su membresia y su historico.
+- Se registra una observacion con precio `null`, nunca cero ni un precio inventado.
+- Si otra wishlist contiene un precio valido para el mismo libro en la misma
+  ejecucion, se prioriza ese precio; sigue habiendo una observacion por ejecucion.
+- Se intenta recuperar el titulo desde el atributo del enlace del producto.
+- Las tarjetas sin titulo identificable siguen bloqueando bajas potencialmente
+  incorrectas, ahora con los numeros de tarjeta en el mensaje de error.
+- La deduplicacion distingue URLs diferentes aunque coincidan titulo y precio.
+
+Validacion: TypeScript correcto, 18 pruebas funcionales y pruebas Chromium de
+reportes y extraccion. No se ejecuto el job real ni se enviaron mensajes Telegram.

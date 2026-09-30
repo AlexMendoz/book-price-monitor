@@ -5,6 +5,7 @@ export function parseMoney(value?: string | null): number | null {
     .replace(/[^\d.,]/g, '')
     .replace(/,/g, '');
 
+  if (!/\d/.test(cleaned)) return null;
   const parsed = Number(cleaned);
   return Number.isFinite(parsed) ? parsed : null;
 }

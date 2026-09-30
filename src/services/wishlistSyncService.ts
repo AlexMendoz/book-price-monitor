@@ -19,7 +19,7 @@ export async function collectWishlists(
   const collected: CollectedWishlist[] = [];
   for (const wishlist of wishlists) {
     const books = await scrape(wishlist.url, options);
-    if (!books.length || books.some((book) => !book.title || !book.discountedPriceText)) {
+    if (!books.length || books.some((book) => !book.title?.trim())) {
       throw new Error(`Extraccion vacia o incompleta: ${wishlist.name}. No se actualizaran estados ni precios.`);
     }
     collected.push({ ...wishlist, books });
@@ -32,6 +32,7 @@ export async function syncWishlists(wishlists: WishlistConfig[], options: Scrape
   await restorePublishedHistory();
   const runId = randomUUID();
   const activeBookIds = new Set<number>();
+  const observations = new Map<number, WishlistBookRaw>();
   const wishlistIds: number[] = [];
   sqlite.exec('BEGIN IMMEDIATE');
   try {
@@ -43,12 +44,16 @@ export async function syncWishlists(wishlists: WishlistConfig[], options: Scrape
         const bookId = await upsertBook({ title: raw.title!, author: raw.author, productUrl: raw.productUrl, imageUrl: raw.imageUrl });
         memberIds.push(bookId);
         await linkBookToWishlist(wishlistId, bookId);
-        if (activeBookIds.has(bookId)) continue;
         activeBookIds.add(bookId);
-        await createPriceSnapshot({ bookId, runId, listPrice: parseMoney(raw.listPriceText),
-          discountedPrice: parseMoney(raw.discountedPriceText), discountPercent: parseDiscount(raw.discountPercentText), currency: raw.currency });
+        const previous = observations.get(bookId);
+        if (!previous || parseMoney(previous.discountedPriceText) === null) observations.set(bookId, raw);
       }
       await reconcileWishlist(wishlistId, memberIds);
+    }
+    for (const [bookId, raw] of observations) {
+      const discountedPrice = parseMoney(raw.discountedPriceText);
+      await createPriceSnapshot({ bookId, runId, listPrice: parseMoney(raw.listPriceText),
+        discountedPrice, discountPercent: discountedPrice === null ? null : parseDiscount(raw.discountPercentText), currency: raw.currency });
     }
     await retireUnconfiguredWishlists(wishlistIds);
     await markBooksOutsideCurrentWishlistsInactive([...activeBookIds]);

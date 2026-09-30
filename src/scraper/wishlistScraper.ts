@@ -1,5 +1,6 @@
 import { chromium } from 'playwright';
 import path from 'node:path';
+import { parseMoney } from '../utils/money';
 
 export type WishlistBookRaw = {
   title: string | null;
@@ -80,91 +81,102 @@ export async function scrapeWishlist(
 
     await page.waitForTimeout(waitAfterLoadMs);
 
-    const items = page.locator('.producto');
-    const count = await items.count();
-
-    console.log(`Tarjetas .producto detectadas: ${count}`);
-
-    const results: WishlistBookRaw[] = [];
-
-    for (let i = 0; i < count; i++) {
-      const item = items.nth(i);
-
-      const title = await textOrNull(item.locator('.infoProducto .titulo').first());
-      const detailNodes = item.locator('.infoProducto .detalles');
-      const detailCount = await detailNodes.count();
-
-      let author: string | null = null;
-
-      // En tu HTML:
-      // detalles[0] = opiniones
-      // detalles[1] = autor
-      // detalles[2] = editorial/formato/estado
-      for (let j = 0; j < detailCount; j++) {
-        const detailText = await textOrNull(detailNodes.nth(j));
-
-        if (!detailText) continue;
-        if (/opiniones/i.test(detailText)) continue;
-        if (/editorial/i.test(detailText)) continue;
-        if (/nuevo|usado|tapa/i.test(detailText)) continue;
-
-        author = detailText;
-        break;
-      }
-
-      const discountedPriceText = await textOrNull(
-        item.locator('.marcoPrecios .precioAhora').first()
-      );
-
-      const listPriceText = await textOrNull(
-        item.locator('.marcoPrecios .precioTachado').first()
-      );
-
-      const rawDiscountText = await textOrNull(
-        item.locator('.portadaProducto .marcoDcto .dcto').first()
-      );
-
-      const discountPercentText =
-        rawDiscountText && /%/.test(rawDiscountText) ? rawDiscountText : null;
-
-      const productUrl = await attrOrNull(
-        item.locator('.portadaProducto a[href], .infoProducto .titulo a[href]').first(),
-        'href'
-      );
-
-      const imageUrl = await attrOrNull(
-        item.locator('.portadaProducto img').first(),
-        'src'
-      );
-
-      if (!title || !discountedPriceText) {
-        continue;
-      }
-
-      results.push({
-        title,
-        author,
-        discountedPriceText,
-        listPriceText,
-        discountPercentText,
-        currency: 'MXN',
-        productUrl,
-        imageUrl,
-      });
-    }
-
-    if (count === 0 || results.length !== count) {
-      throw new Error(`Extraccion incompleta: ${results.length} de ${count} tarjetas validas. Se conserva el estado anterior.`);
-    }
-    const unique = dedupeBooks(results);
-
-    console.log('\nLibros detectados:', unique.length);
-    console.dir(unique.slice(0, 10), { depth: null });
-
-    return unique;
+    return await extractWishlistBooks(page);
   } finally {
     await context.close();
   }
+}
+
+export async function extractWishlistBooks(page: import('playwright').Page): Promise<WishlistBookRaw[]> {
+  const items = page.locator('.producto');
+  const count = await items.count();
+
+  console.log(`Tarjetas .producto detectadas: ${count}`);
+
+  const results: WishlistBookRaw[] = [];
+  const unidentified: number[] = [];
+
+  for (let i = 0; i < count; i++) {
+    const item = items.nth(i);
+
+    const title = await textOrNull(item.locator('.infoProducto .titulo').first())
+      ?? await attrOrNull(item.locator('.infoProducto .titulo a, .portadaProducto a').first(), 'title');
+    const detailNodes = item.locator('.infoProducto .detalles');
+    const detailCount = await detailNodes.count();
+
+    let author: string | null = null;
+
+    // En tu HTML:
+    // detalles[0] = opiniones
+    // detalles[1] = autor
+    // detalles[2] = editorial/formato/estado
+    for (let j = 0; j < detailCount; j++) {
+      const detailText = await textOrNull(detailNodes.nth(j));
+
+      if (!detailText) continue;
+      if (/opiniones/i.test(detailText)) continue;
+      if (/editorial/i.test(detailText)) continue;
+      if (/nuevo|usado|tapa/i.test(detailText)) continue;
+
+      author = detailText;
+      break;
+    }
+
+    const discountedPriceText = await textOrNull(
+      item.locator('.marcoPrecios .precioAhora').first()
+    );
+
+    const listPriceText = await textOrNull(
+      item.locator('.marcoPrecios .precioTachado').first()
+    );
+
+    const rawDiscountText = await textOrNull(
+      item.locator('.portadaProducto .marcoDcto .dcto').first()
+    );
+
+    const discountPercentText =
+      rawDiscountText && /%/.test(rawDiscountText) ? rawDiscountText : null;
+
+    const productUrl = await attrOrNull(
+      item.locator('.portadaProducto a[href], .infoProducto .titulo a[href]').first(),
+      'href'
+    );
+
+    const imageUrl = await attrOrNull(
+      item.locator('.portadaProducto img').first(),
+      'src'
+    );
+
+    if (!title) {
+      unidentified.push(i + 1);
+      continue;
+    }
+
+    if (parseMoney(discountedPriceText) === null) {
+      console.warn(`Libro sin precio disponible: ${title}. Se conserva su membresia e historial.`);
+    }
+
+    results.push({
+      title,
+      author,
+      discountedPriceText,
+      listPriceText,
+      discountPercentText,
+      currency: 'MXN',
+      productUrl,
+      imageUrl,
+    });
+  }
+
+  if (count === 0 || results.length !== count) {
+    throw new Error(`Extraccion incompleta: ${results.length} de ${count} tarjetas identificadas. Tarjetas sin titulo: ${unidentified.join(', ') || 'ninguna; lista vacia'}. Se conserva el estado anterior.`);
+  }
+  const unique = dedupeBooks(results);
+
+  console.log('\nLibros detectados:', unique.length);
+  console.dir(unique.slice(0, 10), { depth: null });
+
+  return unique;
 }
 
 async function textOrNull(locator: import('playwright').Locator): Promise<string | null> {
@@ -194,6 +206,7 @@ function dedupeBooks(items: WishlistBookRaw[]): WishlistBookRaw[] {
       index ===
       arr.findIndex(
         (x) =>
+          x.productUrl === item.productUrl &&
           x.title === item.title &&
           x.author === item.author &&
           x.discountedPriceText === item.discountedPriceText &&
