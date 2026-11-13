@@ -107,3 +107,6 @@ docker-compose.override.yml
 # Transient report builds and job locks
 .reports-build-*/
 *.job-lock
+
+# Private product catalog, reports and browser sessions (never publish)
+/private-products/

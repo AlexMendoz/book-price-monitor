@@ -24,7 +24,13 @@
     "merge-chart-all": "tsx src/scripts/mergeGlobalReport.ts",
     "preview": "node src/scripts/preview.cjs",
     "prepare-site": "node .github/scripts/generate-reports-index.mjs",
-    "test:browser": "node --require tsx/cjs tests/reports.browser.cjs && node --require tsx/cjs tests/scraper.browser.cjs"
+    "test:browser": "node --require tsx/cjs tests/reports.browser.cjs && node --require tsx/cjs tests/scraper.browser.cjs && npm run test:products:browser",
+    "products:add": "tsx src/products/cli.ts add",
+    "products:list": "tsx src/products/cli.ts list",
+    "products:run": "tsx src/products/cli.ts run",
+    "products:report": "tsx src/products/cli.ts report",
+    "products:preview": "tsx src/products/preview.ts",
+    "test:products:browser": "node --require tsx/cjs tests/products.browser.cjs"
   },
   "dependencies": {
     "better-sqlite3": "^11.7.0",

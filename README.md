@@ -1,5 +1,10 @@
 # Book Price Monitor
 
+El modulo independiente de productos privados (Amazon, Mercado Libre y tiendas
+departamentales, sin APIs publicas) se describe en
+[Productos privados](docs/productos-privados.md). Sus datos y reportes no se
+mezclan con libros ni se publican en GitHub Pages.
+
 Monitor de precios de libros en Buscalibre con historico SQLite, reportes HTML,
 GitHub Pages y notificaciones Telegram.
 
