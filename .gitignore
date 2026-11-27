@@ -110,3 +110,4 @@ docker-compose.override.yml
 
 # Private product catalog, reports and browser sessions (never publish)
 /private-products/
+/.automation/

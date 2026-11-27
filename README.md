@@ -156,6 +156,8 @@ No es necesario modificar HTML generados para habilitarla.
 
 ## Estructura y bitacora
 
+- [Automatizacion diaria con systemd y recuperacion manual](docs/automatizacion.md).
+
 - `src/services/wishlistSyncService.ts`: sincronizacion compartida y transaccion.
 - `src/services/historyArchiveService.ts`: recuperacion y respaldo portable.
 - `src/services/dealMetrics.ts`: reglas comunes de ofertas.

@@ -30,7 +30,11 @@
     "products:run": "tsx src/products/cli.ts run",
     "products:report": "tsx src/products/cli.ts report",
     "products:preview": "tsx src/products/preview.ts",
-    "test:products:browser": "node --require tsx/cjs tests/products.browser.cjs"
+    "test:products:browser": "node --require tsx/cjs tests/products.browser.cjs",
+    "automation:install": "node scripts/automation/install.cjs",
+    "automation:run": "node scripts/automation/run.cjs",
+    "automation:manual": "node scripts/automation/run.cjs --manual",
+    "automation:status": "node scripts/automation/run.cjs --status"
   },
   "dependencies": {
     "better-sqlite3": "^11.7.0",

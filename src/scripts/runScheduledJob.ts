@@ -5,11 +5,14 @@ import { buildReports } from '../services/buildReportsService';
 import { withJobLock } from '../services/jobLock';
 import { getAllWishlists } from '../services/reportService';
 import { getDealRankingByWishlist } from '../services/rankingService';
-import { sendTelegramMessage } from '../services/telegramService';
+import { splitTelegramMessage } from '../services/telegramBotApi';
+import { flush, notify } from '../services/notificationOutbox.cjs';
 import { formatDealLines } from '../services/dealPresentation';
 import { escapeHtml } from '../utils/format.cjs';
 
 async function runJob() {
+  try { await flush(process.env); }
+  catch { console.warn('No se pudo procesar la cola de avisos; se continuara con los precios.'); }
   const result = await syncWishlists(WISHLISTS, scraperOptionsFromEnv());
   console.log(result);
   await buildReports();
@@ -20,7 +23,9 @@ async function runJob() {
     lines.push(`<b>Wishlist: ${escapeHtml(wishlist.name)}</b>`, '');
     for (const item of deals) lines.push(...formatDealLines(item), '');
   }
-  if (lines.length) await sendTelegramMessage({ text: lines.join('\n').trim() });
+  if (lines.length) {
+    for (const text of splitTelegramMessage(lines.join('\n').trim())) await notify(process.env, text, true);
+  }
   console.log('Job completado: precios, reportes y menu actualizados.');
 }
 withJobLock(runJob).catch(error => { console.error('Error en job:', error); process.exitCode = 1; });
